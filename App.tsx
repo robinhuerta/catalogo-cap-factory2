@@ -6,6 +6,7 @@ import Lightbox from './components/Lightbox';
 import QuoteDrawer from './components/QuoteDrawer';
 import AdminPanel from './components/AdminPanel';
 import PriceCalculator from './components/PriceCalculator';
+import Portfolio from './components/Portfolio';
 import { CAPS_DATA, CLIENT_PROJECTS, TECH_INNOVATIONS, GLOBAL_CONFIG } from './constants';
 import { CapProduct, Category, QuoteItem, ViewMode } from './types';
 import { supabase, DBProduct } from './lib/supabase';
@@ -271,24 +272,11 @@ const App: React.FC = () => {
 
         {/* ── PORTFOLIO ────────────────────────────────────── */}
         {viewMode === 'portfolio' && (
-          <div className="max-w-[1600px] mx-auto px-6 sm:px-10 pt-8 pb-24">
-            <Breadcrumb label="Proyectos de clientes" onHome={() => setViewMode('home')} />
-            <SectionTitle>Portafolio</SectionTitle>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
-              {CLIENT_PROJECTS.map(project => (
-                <div key={project.id} className="group bg-white border border-grey-border rounded-2xl overflow-hidden hover:shadow-lg transition-all">
-                  <div className="aspect-square overflow-hidden bg-grey-light">
-                    <img src={project.imagen} alt={project.cliente} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 grayscale group-hover:grayscale-0" />
-                  </div>
-                  <div className="p-5">
-                    <p className="text-[9px] text-primary font-medium tracking-widest uppercase mb-1">{project.tipo}</p>
-                    <h3 className="font-display text-lg font-bold text-dark">{project.cliente}</h3>
-                    <p className="text-grey text-sm mt-1 leading-relaxed">{project.detalles}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <Portfolio
+            projects={CLIENT_PROJECTS}
+            onHome={() => setViewMode('home')}
+            onContact={() => setViewMode('b2b')}
+          />
         )}
 
         {/* ── TECHNOLOGY ───────────────────────────────────── */}

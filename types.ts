@@ -26,8 +26,11 @@ export interface ClientProject {
   id: string;
   cliente: string;
   imagen: string;
-  tipo: string;
+  industria: 'Restaurantes' | 'Deportes' | 'Corporativo' | 'Eventos' | 'Retail';
+  tecnica: string;
+  cantidad: number;
   detalles: string;
+  frase?: string;
 }
 
 export interface TechInnovation {
