@@ -48,7 +48,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const [uploading, setUploading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [tagsInput, setTagsInput] = useState('');
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const bulkRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { if (auth) load(); }, [auth]);
 
@@ -90,6 +92,31 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
       setForm(f => ({ ...f, imagen: data.publicUrl }));
     }
     setUploading(false);
+  };
+
+  const handleBulkUpload = async (files: FileList) => {
+    const total = files.length;
+    setBulkProgress({ done: 0, total });
+    for (let i = 0; i < total; i++) {
+      const file = files[i];
+      const ext = file.name.split('.').pop();
+      const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from(BUCKET).upload(filename, file, { upsert: true });
+      if (!error) {
+        const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
+        const baseName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+        await supabase.from('products').insert([{
+          ...EMPTY,
+          nombre: baseName,
+          imagen: data.publicUrl,
+          activo: false,
+          orden: i,
+        }]);
+      }
+      setBulkProgress({ done: i + 1, total });
+    }
+    await load();
+    setBulkProgress(null);
   };
 
   const save = async () => {
@@ -170,6 +197,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => bulkRef.current?.click()}
+            disabled={!!bulkProgress}
+            className="bg-white/10 text-cream px-4 py-2 rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-white/20 transition-colors disabled:opacity-50 border border-white/20"
+          >
+            {bulkProgress ? `Subiendo ${bulkProgress.done}/${bulkProgress.total}...` : '↑ Subida masiva'}
+          </button>
+          <input
+            ref={bulkRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={e => e.target.files?.length && handleBulkUpload(e.target.files)}
+          />
           <button onClick={openAdd} className="bg-primary text-cream px-4 py-2 rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-primary-dark transition-colors">
             + Nuevo producto
           </button>
