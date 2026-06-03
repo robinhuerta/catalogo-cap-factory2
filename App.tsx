@@ -5,6 +5,7 @@ import CapCard from './components/CapCard';
 import Lightbox from './components/Lightbox';
 import QuoteDrawer from './components/QuoteDrawer';
 import AdminPanel from './components/AdminPanel';
+import PriceCalculator from './components/PriceCalculator';
 import { CAPS_DATA, CLIENT_PROJECTS, TECH_INNOVATIONS, GLOBAL_CONFIG } from './constants';
 import { CapProduct, Category, QuoteItem, ViewMode } from './types';
 import { supabase, DBProduct } from './lib/supabase';
@@ -293,7 +294,13 @@ const App: React.FC = () => {
         {/* ── TECHNOLOGY ───────────────────────────────────── */}
         {viewMode === 'technology' && (
           <div className="max-w-[1600px] mx-auto px-6 sm:px-10 pt-8 pb-24">
-            <Breadcrumb label="Infraestructura & tecnología" onHome={() => setViewMode('home')} />
+            <Breadcrumb label="Fábrica" onHome={() => setViewMode('home')} />
+
+            {/* Calculadora de precios */}
+            <div className="mb-20">
+              <PriceCalculator onGoToCatalog={() => setViewMode('catalog')} />
+            </div>
+
             <div className="mb-14">
               <SectionTitle>Ingeniería <span className="text-primary">textil.</span></SectionTitle>
               <p className="text-grey text-sm max-w-xl mt-4 leading-relaxed">
