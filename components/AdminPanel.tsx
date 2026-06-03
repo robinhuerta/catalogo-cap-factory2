@@ -53,6 +53,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const [bulkModal, setBulkModal] = useState(false);
   const [bulkCategory, setBulkCategory] = useState(CATEGORIES[0]);
   const [zoomImg, setZoomImg] = useState<string | null>(null);
+  const [filterCat, setFilterCat] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'hidden'>('all');
   const lastForm = useRef<Omit<DBProduct, 'id' | 'created_at'>>(EMPTY);
   const fileRef = useRef<HTMLInputElement>(null);
   const bulkRef = useRef<HTMLInputElement>(null);
@@ -241,6 +243,47 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
 
       {/* Product list */}
       <div className="max-w-5xl mx-auto px-6 py-10">
+        {/* Filters */}
+        {!loading && products.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            {/* Category filter */}
+            <button
+              onClick={() => setFilterCat('')}
+              className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${filterCat === '' ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
+            >
+              Todas
+            </button>
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setFilterCat(cat === filterCat ? '' : cat)}
+                className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${filterCat === cat ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
+              >
+                {cat}
+              </button>
+            ))}
+            {/* Divider */}
+            <div className="w-px h-5 bg-grey-border mx-1" />
+            {/* Status filter */}
+            {(['all', 'active', 'hidden'] as const).map(s => (
+              <button
+                key={s}
+                onClick={() => setFilterStatus(s)}
+                className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${filterStatus === s ? 'bg-primary border-primary text-cream' : 'bg-white border-grey-border text-grey hover:border-primary hover:text-primary'}`}
+              >
+                {s === 'all' ? 'Todos' : s === 'active' ? 'Visibles' : 'Ocultos'}
+              </button>
+            ))}
+            {/* Result count */}
+            <span className="ml-auto text-[10px] text-grey">
+              {products.filter(p =>
+                (filterCat === '' || p.categoria === filterCat) &&
+                (filterStatus === 'all' || (filterStatus === 'active' ? p.activo : !p.activo))
+              ).length} de {products.length}
+            </span>
+          </div>
+        )}
+
         {loading ? (
           <div className="text-center py-20 text-grey">Cargando productos...</div>
         ) : products.length === 0 ? (
@@ -250,7 +293,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
           </div>
         ) : (
           <div className="space-y-3">
-            {products.map(p => (
+            {products.filter(p =>
+              (filterCat === '' || p.categoria === filterCat) &&
+              (filterStatus === 'all' || (filterStatus === 'active' ? p.activo : !p.activo))
+            ).map(p => (
               <div key={p.id} className={`bg-white border rounded-xl p-4 flex items-center gap-4 transition-all ${p.activo ? 'border-grey-border' : 'border-grey-border opacity-50'}`}>
                 {/* Image with zoom on click */}
                 <div
