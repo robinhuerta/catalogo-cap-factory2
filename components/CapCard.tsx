@@ -1,6 +1,12 @@
 import React from 'react';
 import { CapProduct } from '../types';
 
+const formatPrecio = (p?: string) => {
+  if (!p) return 'Cotizar';
+  if (p.toLowerCase().includes('s/') || p.toLowerCase().includes('cotizar')) return p;
+  return `S/ ${p}`;
+};
+
 interface CapCardProps {
   cap: CapProduct;
   onClick: (cap: CapProduct) => void;
@@ -55,7 +61,7 @@ const CapCard: React.FC<CapCardProps> = ({ cap, onClick, onAddToQuote, isQuoted 
         <div className="flex items-center justify-between gap-2 mt-auto">
           <div>
             <p className="text-[10px] text-grey font-medium">MOQ {cap.moq} uds</p>
-            <p className="text-[12px] font-semibold text-dark">{cap.precio || 'Cotizar'}</p>
+            <p className="text-[12px] font-semibold text-dark">{formatPrecio(cap.precio)}</p>
           </div>
 
           <button

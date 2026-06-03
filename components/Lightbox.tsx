@@ -100,7 +100,11 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
           <div className="mb-6">
             <p className="text-[9px] text-primary font-medium tracking-[0.4em] uppercase mb-2">{cap.categoria}</p>
             <h2 className="font-display text-3xl font-bold text-dark leading-tight tracking-tight">{cap.nombre}</h2>
-            <p className="text-xl font-semibold text-dark mt-1">{cap.precio || 'Cotizar precio'}</p>
+            <p className="text-xl font-semibold text-dark mt-1">
+              {cap.precio
+                ? (cap.precio.toLowerCase().includes('s/') ? cap.precio : `S/ ${cap.precio}`)
+                : 'Cotizar precio'}
+            </p>
             <p className="mt-3 text-grey text-sm leading-relaxed">{cap.descripcion}</p>
           </div>
 
