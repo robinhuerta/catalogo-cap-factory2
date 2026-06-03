@@ -1,49 +1,50 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cap Factory | Catálogo Premium</title>
+    <title>Cap Factory | Manufactura Premium</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              primary: '#FF5C00', // Naranja FullDepor
-              'primary-dark': '#E65300',
-              dark: '#333333',
+              primary: '#C9A96E',
+              'primary-dark': '#A88A50',
+              dark: '#111111',
+              cream: '#FAF9F6',
               grey: {
-                DEFAULT: '#999999',
-                light: '#F8F8F8',
-                border: '#EEEEEE'
+                DEFAULT: '#888888',
+                light: '#F5F4F1',
+                border: '#E8E6E1'
               }
-            }
+            },
+            fontFamily: {
+              display: ['Syne', 'sans-serif'],
+              body: ['Inter', 'sans-serif'],
+            },
           }
         }
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        * { -webkit-font-smoothing: antialiased; }
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #ffffff;
-            color: #333333;
+            background-color: #FAF9F6;
+            color: #111111;
         }
-        /* Custom scrollbar for a premium feel */
-        ::-webkit-scrollbar {
-            width: 8px;
+        h1, h2, h3, h4, .font-display {
+            font-family: 'Syne', sans-serif;
         }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #000;
-            border-radius: 0px;
-        }
-        
-        /* Animación de Marquesina */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #FAF9F6; }
+        ::-webkit-scrollbar-thumb { background: #C9A96E; border-radius: 0; }
+
         @keyframes marquee {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
@@ -51,11 +52,15 @@
         .animate-marquee {
             display: flex;
             width: max-content;
-            animation: marquee 40s linear infinite;
+            animation: marquee 50s linear infinite;
         }
-        .animate-marquee:hover {
-            animation-play-state: paused;
+        .animate-marquee:hover { animation-play-state: paused; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+        .fade-up { animation: fadeUp 0.6s ease forwards; }
     </style>
 <script type="importmap">
 {
