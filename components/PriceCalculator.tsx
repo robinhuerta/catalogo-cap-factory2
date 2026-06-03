@@ -19,11 +19,11 @@ const ADDONS_QUOTE = [
 
 const TIERS = [
   { min: 50,   max: 99,   discount: 0,   delivery: '10–15 días hábiles' },
-  { min: 100,  max: 299,  discount: 8,   delivery: '10–15 días hábiles' },
-  { min: 300,  max: 499,  discount: 15,  delivery: '15–20 días hábiles' },
-  { min: 500,  max: 999,  discount: 22,  delivery: '20–25 días hábiles' },
-  { min: 1000, max: 2999, discount: 30,  delivery: '25–35 días hábiles' },
-  { min: 3000, max: Infinity, discount: 38, delivery: '35–50 días hábiles' },
+  { min: 100,  max: 299,  discount: 5,   delivery: '10–15 días hábiles' },
+  { min: 300,  max: 499,  discount: 10,  delivery: '15–20 días hábiles' },
+  { min: 500,  max: 999,  discount: 15,  delivery: '20–25 días hábiles' },
+  { min: 1000, max: 2999, discount: 18,  delivery: '25–35 días hábiles' },
+  { min: 3000, max: Infinity, discount: 20, delivery: '35–50 días hábiles' },
 ];
 
 const getTier = (qty: number) =>
