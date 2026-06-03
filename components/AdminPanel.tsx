@@ -22,6 +22,7 @@ const EMPTY: Omit<DBProduct, 'id' | 'created_at'> = {
   moq: 50,
   entrega: '15-20 días',
   precio: '',
+  precio_antes: '',
   tags: [],
   tela: '',
   bordado: '',
@@ -461,9 +462,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
               {/* Price + MOQ + Delivery */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="text-[10px] text-grey font-medium uppercase tracking-widest block mb-1.5">Precio</label>
+                  <label className="text-[10px] text-grey font-medium uppercase tracking-widest block mb-1.5">Precio actual</label>
                   <input type="text" placeholder="Desde S/ 25.00" value={form.precio} onChange={e => field('precio', e.target.value)}
                     className="w-full border border-grey-border rounded-lg px-3 py-2.5 text-sm text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                  <input type="text" placeholder="Precio antes (opcional)" value={form.precio_antes} onChange={e => field('precio_antes', e.target.value)}
+                    className="mt-1.5 w-full border border-grey-border rounded-lg px-3 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                  {form.precio_antes && <p className="text-[9px] text-primary mt-1">Antes: <s>{form.precio_antes}</s> → Ahora: {form.precio}</p>}
                 </div>
                 <div>
                   <label className="text-[10px] text-grey font-medium uppercase tracking-widest block mb-1.5">MOQ (mín. unid.)</label>

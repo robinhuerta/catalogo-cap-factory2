@@ -120,11 +120,19 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
           <div className="mb-6">
             <p className="text-[9px] text-primary font-medium tracking-[0.4em] uppercase mb-2">{cap.categoria}</p>
             <h2 className="font-display text-3xl font-bold text-dark leading-tight tracking-tight">{cap.nombre}</h2>
-            <p className="text-xl font-semibold text-dark mt-1">
-              {cap.precio
-                ? (cap.precio.toLowerCase().includes('s/') ? cap.precio : `S/ ${cap.precio}`)
-                : 'Cotizar precio'}
-            </p>
+            {cap.precio_antes ? (
+              <div className="flex items-baseline gap-2 mt-1">
+                <p className="text-xl font-bold text-primary">{cap.precio.toLowerCase().includes('s/') ? cap.precio : `S/ ${cap.precio}`}</p>
+                <p className="text-sm text-grey line-through">{cap.precio_antes.toLowerCase().includes('s/') ? cap.precio_antes : `S/ ${cap.precio_antes}`}</p>
+                <span className="text-[10px] bg-primary text-cream font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Oferta</span>
+              </div>
+            ) : (
+              <p className="text-xl font-semibold text-dark mt-1">
+                {cap.precio
+                  ? (cap.precio.toLowerCase().includes('s/') ? cap.precio : `S/ ${cap.precio}`)
+                  : 'Cotizar precio'}
+              </p>
+            )}
             <p className="mt-3 text-grey text-sm leading-relaxed">{cap.descripcion}</p>
           </div>
 

@@ -19,6 +19,7 @@ export interface CapProduct {
   entrega: string;
   tags: string[];
   precio?: string;
+  precio_antes?: string;
 }
 
 export interface ClientProject {

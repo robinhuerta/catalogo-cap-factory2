@@ -19,6 +19,7 @@ const toCapProduct = (p: DBProduct): CapProduct => ({
   moq: p.moq,
   entrega: p.entrega,
   precio: p.precio,
+  precio_antes: p.precio_antes,
   tags: p.tags,
   fichaTecnica: { tela: p.tela, bordado: p.bordado, visera: p.visera, broche: p.broche, acabados: p.acabados },
 });

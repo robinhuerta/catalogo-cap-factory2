@@ -14,6 +14,7 @@ export interface DBProduct {
   moq: number;
   entrega: string;
   precio: string;
+  precio_antes: string;
   tags: string[];
   imagenes: string[];
   tela: string;

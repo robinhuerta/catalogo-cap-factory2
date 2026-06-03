@@ -61,7 +61,14 @@ const CapCard: React.FC<CapCardProps> = ({ cap, onClick, onAddToQuote, isQuoted 
         <div className="flex items-center justify-between gap-2 mt-auto">
           <div>
             <p className="text-[10px] text-grey font-medium">MOQ {cap.moq} uds</p>
-            <p className="text-[12px] font-semibold text-dark">{formatPrecio(cap.precio)}</p>
+            {cap.precio_antes ? (
+              <div className="flex items-baseline gap-1.5">
+                <p className="text-[12px] font-bold text-primary">{formatPrecio(cap.precio)}</p>
+                <p className="text-[10px] text-grey line-through">{formatPrecio(cap.precio_antes)}</p>
+              </div>
+            ) : (
+              <p className="text-[12px] font-semibold text-dark">{formatPrecio(cap.precio)}</p>
+            )}
           </div>
 
           <button
