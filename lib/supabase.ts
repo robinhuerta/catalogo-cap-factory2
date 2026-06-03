@@ -5,6 +5,20 @@ const key = import.meta.env.VITE_SUPABASE_KEY as string;
 
 export const supabase = createClient(url, key);
 
+export interface DBProject {
+  id: string;
+  cliente: string;
+  imagen: string;
+  industria: string;
+  tecnica: string;
+  cantidad: number;
+  detalles: string;
+  frase: string;
+  activo: boolean;
+  orden: number;
+  created_at: string;
+}
+
 export interface DBProduct {
   id: string;
   nombre: string;

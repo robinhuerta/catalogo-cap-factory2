@@ -9,7 +9,7 @@ import PriceCalculator from './components/PriceCalculator';
 import Portfolio from './components/Portfolio';
 import { CAPS_DATA, CLIENT_PROJECTS, TECH_INNOVATIONS, GLOBAL_CONFIG } from './constants';
 import { CapProduct, Category, QuoteItem, ViewMode } from './types';
-import { supabase, DBProduct } from './lib/supabase';
+import { supabase, DBProduct, DBProject } from './lib/supabase';
 
 const toCapProduct = (p: DBProduct): CapProduct => ({
   id: p.id,
@@ -70,6 +70,7 @@ const App: React.FC = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [expandedBenefit, setExpandedBenefit] = useState<string | null>('b1');
   const [dbProducts, setDbProducts] = useState<CapProduct[] | null>(null);
+  const [dbProjects, setDbProjects] = useState<DBProject[] | null>(null);
   const [marqueeImages, setMarqueeImages] = useState<string[]>(MARQUEE_IMAGES);
 
   useEffect(() => {
@@ -81,6 +82,10 @@ const App: React.FC = () => {
           const imgs = products.map(p => p.imagen).filter(Boolean);
           if (imgs.length > 0) setMarqueeImages(imgs);
         }
+      });
+    supabase.from('projects').select('*').eq('activo', true).order('orden').order('created_at')
+      .then(({ data }) => {
+        if (data) setDbProjects(data as DBProject[]);
       });
   }, []);
 
@@ -273,9 +278,8 @@ const App: React.FC = () => {
         {/* ── PORTFOLIO ────────────────────────────────────── */}
         {viewMode === 'portfolio' && (
           <Portfolio
-            projects={CLIENT_PROJECTS}
+            projects={dbProjects ?? CLIENT_PROJECTS}
             onHome={() => setViewMode('home')}
-            onContact={() => setViewMode('b2b')}
           />
         )}
 

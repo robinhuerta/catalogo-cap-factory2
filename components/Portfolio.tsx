@@ -1,16 +1,25 @@
 import React, { useState } from 'react';
-import { ClientProject } from '../types';
 import { GLOBAL_CONFIG } from '../constants';
+
+interface ProjectDisplay {
+  id: string;
+  cliente: string;
+  imagen: string;
+  industria: string;
+  tecnica: string;
+  cantidad: number;
+  detalles: string;
+  frase?: string;
+}
 
 const INDUSTRIES = ['Todos', 'Restaurantes', 'Deportes', 'Corporativo', 'Eventos', 'Retail'] as const;
 
 interface Props {
-  projects: ClientProject[];
+  projects: ProjectDisplay[];
   onHome: () => void;
-  onContact: () => void;
 }
 
-const Portfolio: React.FC<Props> = ({ projects, onHome, onContact }) => {
+const Portfolio: React.FC<Props> = ({ projects, onHome }) => {
   const [active, setActive] = useState<string>('Todos');
 
   const filtered = active === 'Todos'
@@ -98,7 +107,7 @@ const Portfolio: React.FC<Props> = ({ projects, onHome, onContact }) => {
   );
 };
 
-const ProjectCard: React.FC<{ project: ClientProject }> = ({ project }) => (
+const ProjectCard: React.FC<{ project: ProjectDisplay }> = ({ project }) => (
   <div className="group bg-white border border-grey-border rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col">
     <div className="aspect-[4/3] overflow-hidden bg-grey-light relative">
       <img
