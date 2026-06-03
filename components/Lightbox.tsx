@@ -64,54 +64,55 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
         </button>
 
         {/* Image panel */}
-        <div
-          className="w-full md:w-[45%] bg-grey-light flex items-center justify-center p-8 relative overflow-hidden flex-shrink-0 select-none"
-          onMouseEnter={() => setZoom(true)}
-          onMouseLeave={() => setZoom(false)}
-          onMouseMove={handleMouseMove}
-          style={{ cursor: zoom ? 'crosshair' : 'default' }}
-        >
-          <img
-            src={allImages[activeImg] || cap.imagen}
-            alt={cap.nombre}
-            className="w-full max-h-[400px] md:max-h-full object-contain drop-shadow-xl transition-transform duration-200"
-            style={zoom ? {
-              transform: 'scale(2.5)',
-              transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-            } : {}}
-          />
-          {/* Thumbnails */}
+        <div className="w-full md:w-[45%] bg-grey-light flex flex-col relative flex-shrink-0 select-none">
+          {/* Zoomable area */}
+          <div
+            className="flex-1 flex items-center justify-center p-6 overflow-hidden relative"
+            onMouseEnter={() => setZoom(true)}
+            onMouseLeave={() => setZoom(false)}
+            onMouseMove={handleMouseMove}
+            style={{ cursor: zoom ? 'crosshair' : 'default', minHeight: '280px' }}
+          >
+            <img
+              src={allImages[activeImg] || cap.imagen}
+              alt={cap.nombre}
+              className="w-full max-h-[300px] md:max-h-[380px] object-contain drop-shadow-xl transition-transform duration-150"
+              style={zoom ? { transform: 'scale(2.5)', transformOrigin: `${zoomPos.x}% ${zoomPos.y}%` } : {}}
+            />
+            {!zoom && (
+              <div className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[9px] text-grey font-medium shadow-sm pointer-events-none">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10v4m-2-2h4" />
+                </svg>
+                Zoom
+              </div>
+            )}
+            <div className="absolute bottom-3 left-3 flex gap-2">
+              <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl shadow-sm">
+                <p className="text-[7px] text-grey font-medium uppercase tracking-widest">MOQ</p>
+                <p className="text-sm font-display font-bold text-dark">{cap.moq} uds</p>
+              </div>
+              <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl shadow-sm">
+                <p className="text-[7px] text-grey font-medium uppercase tracking-widest">Entrega</p>
+                <p className="text-sm font-display font-bold text-dark">{cap.entrega}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Thumbnails — fuera del área de zoom */}
           {allImages.length > 1 && (
-            <div className="absolute bottom-16 left-0 right-0 flex justify-center gap-2 px-4">
+            <div className="flex justify-center gap-2 px-4 py-3 bg-grey-light/80 border-t border-grey-border flex-wrap">
               {allImages.map((img, i) => (
                 <button
                   key={i}
-                  onClick={e => { e.stopPropagation(); setActiveImg(i); setZoom(false); }}
-                  className={`w-10 h-10 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${activeImg === i ? 'border-primary scale-110' : 'border-white/50 hover:border-white'}`}
+                  onClick={() => { setActiveImg(i); setZoom(false); }}
+                  className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${activeImg === i ? 'border-primary' : 'border-transparent hover:border-grey-border'}`}
                 >
                   <img src={img} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
           )}
-          {!zoom && (
-            <div className="absolute bottom-16 right-4 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[9px] text-grey font-medium shadow-sm pointer-events-none">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10v4m-2-2h4" />
-              </svg>
-              Zoom
-            </div>
-          )}
-          <div className="absolute bottom-4 left-4 flex gap-2">
-            <div className="bg-white/90 backdrop-blur-sm px-3 py-2 rounded-xl shadow-sm">
-              <p className="text-[8px] text-grey font-medium uppercase tracking-widest">MOQ</p>
-              <p className="text-sm font-display font-bold text-dark">{cap.moq} uds</p>
-            </div>
-            <div className="bg-white/90 backdrop-blur-sm px-3 py-2 rounded-xl shadow-sm">
-              <p className="text-[8px] text-grey font-medium uppercase tracking-widest">Entrega</p>
-              <p className="text-sm font-display font-bold text-dark">{cap.entrega}</p>
-            </div>
-          </div>
         </div>
 
         {/* Info panel */}
