@@ -22,14 +22,7 @@ const toCapProduct = (p: DBProduct): CapProduct => ({
   fichaTecnica: { tela: p.tela, bordado: p.bordado, visera: p.visera, broche: p.broche, acabados: p.acabados },
 });
 
-const MARQUEE_IMAGES = [
-  "https://images.unsplash.com/photo-1575428652377-a2d80e2277fc?auto=format&fit=crop&q=80&w=400",
-  "https://images.unsplash.com/photo-1595433707802-6806f3f04f0d?auto=format&fit=crop&q=80&w=400",
-  "https://images.unsplash.com/photo-1534215754734-18e2973b7d80?auto=format&fit=crop&q=80&w=400",
-  "https://images.unsplash.com/photo-1556306535-0f09a537f0a3?auto=format&fit=crop&q=80&w=400",
-  "https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&q=80&w=400",
-  "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&q=80&w=400",
-];
+const MARQUEE_IMAGES: string[] = [];
 
 const B2B_BENEFITS = [
   {
@@ -73,11 +66,17 @@ const App: React.FC = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [expandedBenefit, setExpandedBenefit] = useState<string | null>('b1');
   const [dbProducts, setDbProducts] = useState<CapProduct[] | null>(null);
+  const [marqueeImages, setMarqueeImages] = useState<string[]>(MARQUEE_IMAGES);
 
   useEffect(() => {
     supabase.from('products').select('*').eq('activo', true).order('orden').order('created_at')
       .then(({ data }) => {
-        if (data && data.length > 0) setDbProducts((data as DBProduct[]).map(toCapProduct));
+        if (data && data.length > 0) {
+          const products = (data as DBProduct[]).map(toCapProduct);
+          setDbProducts(products);
+          const imgs = products.map(p => p.imagen).filter(Boolean);
+          if (imgs.length > 0) setMarqueeImages(imgs);
+        }
       });
   }, []);
 
@@ -197,7 +196,7 @@ const App: React.FC = () => {
             {/* Marquee strip */}
             <div className="border-y border-grey-border overflow-hidden py-8 my-8 bg-white">
               <div className="animate-marquee">
-                {[...MARQUEE_IMAGES, ...MARQUEE_IMAGES].map((img, i) => (
+                {[...marqueeImages, ...marqueeImages].map((img, i) => (
                   <div key={i} className="inline-block mx-3 group">
                     <div className="w-56 aspect-[4/3] overflow-hidden rounded-xl bg-grey-light">
                       <img src={img} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" alt="" />
