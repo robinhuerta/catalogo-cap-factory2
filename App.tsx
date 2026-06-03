@@ -4,8 +4,23 @@ import FilterBar from './components/FilterBar';
 import CapCard from './components/CapCard';
 import Lightbox from './components/Lightbox';
 import QuoteDrawer from './components/QuoteDrawer';
-import { CAPS_DATA, CATEGORIES, CLIENT_PROJECTS, TECH_INNOVATIONS, GLOBAL_CONFIG } from './constants';
+import AdminPanel from './components/AdminPanel';
+import { CAPS_DATA, CLIENT_PROJECTS, TECH_INNOVATIONS, GLOBAL_CONFIG } from './constants';
 import { CapProduct, Category, QuoteItem, ViewMode } from './types';
+import { supabase, DBProduct } from './lib/supabase';
+
+const toCapProduct = (p: DBProduct): CapProduct => ({
+  id: p.id,
+  nombre: p.nombre,
+  categoria: p.categoria,
+  imagen: p.imagen,
+  descripcion: p.descripcion,
+  moq: p.moq,
+  entrega: p.entrega,
+  precio: p.precio,
+  tags: p.tags,
+  fichaTecnica: { tela: p.tela, bordado: p.bordado, visera: p.visera, broche: p.broche, acabados: p.acabados },
+});
 
 const MARQUEE_IMAGES = [
   "https://images.unsplash.com/photo-1575428652377-a2d80e2277fc?auto=format&fit=crop&q=80&w=400",
@@ -48,6 +63,8 @@ const B2B_BENEFITS = [
 ];
 
 const App: React.FC = () => {
+  const isAdmin = window.location.pathname === '/admin';
+
   const [viewMode, setViewMode] = useState<ViewMode>('home');
   const [activeCategory, setActiveCategory] = useState<Category>('Todas');
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,6 +72,14 @@ const App: React.FC = () => {
   const [quoteList, setQuoteList] = useState<QuoteItem[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [expandedBenefit, setExpandedBenefit] = useState<string | null>('b1');
+  const [dbProducts, setDbProducts] = useState<CapProduct[] | null>(null);
+
+  useEffect(() => {
+    supabase.from('products').select('*').eq('activo', true).order('orden').order('created_at')
+      .then(({ data }) => {
+        if (data && data.length > 0) setDbProducts((data as DBProduct[]).map(toCapProduct));
+      });
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('cf_quote_list');
@@ -89,9 +114,12 @@ const App: React.FC = () => {
     if (viewMode !== 'catalog') setViewMode('catalog');
   };
 
+  const allProducts = dbProducts ?? CAPS_DATA;
+  const catalogCategories = [...new Set(allProducts.map(p => p.categoria))];
+
   const filteredCaps = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    return CAPS_DATA.filter(cap => {
+    return allProducts.filter(cap => {
       const matchesCat = activeCategory === 'Todas' || cap.categoria === activeCategory;
       if (!q) return matchesCat;
       return matchesCat && (
@@ -101,9 +129,11 @@ const App: React.FC = () => {
         cap.tags.some(t => t.toLowerCase().includes(q))
       );
     });
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory, searchQuery, allProducts]);
 
-  const catalogCategories = CATEGORIES.filter(c => c !== 'Todas');
+  if (isAdmin) {
+    return <AdminPanel onExit={() => window.location.href = '/'} />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-cream text-dark">
