@@ -68,40 +68,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
     try {
       const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `Eres asistente de una fábrica de gorras peruana llamada Cap Factory.
-El usuario describe un producto y tú debes generar los campos en JSON.
-
-Descripción: "${aiPrompt}"
-
-Responde SOLO con un JSON válido con estos campos exactos:
-{
-  "nombre": "nombre comercial corto y atractivo",
-  "categoria": "una de: Snapback (Plana), Trucker (Malla), Daddy (Curva), 5 Paneles, Deportivas, Publicitarias",
-  "descripcion": "descripción de 1-2 oraciones vendedora",
-  "tela": "material de la tela base",
-  "bordado": "tipo de bordado o arte",
-  "visera": "tipo de visera",
-  "broche": "tipo de broche o ajuste",
-  "acabados": "acabados especiales",
-  "tags": ["tag1", "tag2", "tag3"]
-}`
+                text: `Eres asistente de Cap Factory, fábrica de gorras peruana. Descripción: "${aiPrompt}". Responde SOLO con JSON sin markdown: {"nombre":"...","categoria":"Snapback (Plana)|Trucker (Malla)|Daddy (Curva)|5 Paneles|Deportivas|Publicitarias","descripcion":"...","tela":"...","bordado":"...","visera":"...","broche":"...","acabados":"...","tags":["..."]}`
               }]
-            }],
-            generationConfig: { responseMimeType: 'application/json' }
+            }]
           })
         }
       );
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e?.error?.message || `Error ${res.status}`);
+      }
       const data = await res.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) {
-        const parsed = JSON.parse(text);
+      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) {
+        const parsed = JSON.parse(match[0]);
         setForm(f => ({
           ...f,
           nombre: parsed.nombre || f.nombre,
@@ -116,8 +104,8 @@ Responde SOLO con un JSON válido con estos campos exactos:
         if (parsed.tags?.length) setTagsInput(parsed.tags.join(', '));
         setAiPrompt('');
       }
-    } catch {
-      showError('Error al conectar con Gemini. Verifica la API key.');
+    } catch (err: any) {
+      showError(`Error Gemini: ${err?.message || 'Verifica la API key en Vercel'}`);
     }
     setAiLoading(false);
   };
