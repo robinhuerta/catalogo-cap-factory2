@@ -51,8 +51,76 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [bulkModal, setBulkModal] = useState(false);
   const [bulkCategory, setBulkCategory] = useState(CATEGORIES[0]);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const bulkRef = useRef<HTMLInputElement>(null);
+
+  const showError = (msg: string) => {
+    setErrorMsg(msg);
+    setTimeout(() => setErrorMsg(null), 6000);
+  };
+
+  const generateWithAI = async () => {
+    if (!aiPrompt.trim()) return;
+    setAiLoading(true);
+    try {
+      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `Eres asistente de una fábrica de gorras peruana llamada Cap Factory.
+El usuario describe un producto y tú debes generar los campos en JSON.
+
+Descripción: "${aiPrompt}"
+
+Responde SOLO con un JSON válido con estos campos exactos:
+{
+  "nombre": "nombre comercial corto y atractivo",
+  "categoria": "una de: Snapback (Plana), Trucker (Malla), Daddy (Curva), 5 Paneles, Deportivas, Publicitarias",
+  "descripcion": "descripción de 1-2 oraciones vendedora",
+  "tela": "material de la tela base",
+  "bordado": "tipo de bordado o arte",
+  "visera": "tipo de visera",
+  "broche": "tipo de broche o ajuste",
+  "acabados": "acabados especiales",
+  "tags": ["tag1", "tag2", "tag3"]
+}`
+              }]
+            }],
+            generationConfig: { responseMimeType: 'application/json' }
+          })
+        }
+      );
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        const parsed = JSON.parse(text);
+        setForm(f => ({
+          ...f,
+          nombre: parsed.nombre || f.nombre,
+          categoria: parsed.categoria || f.categoria,
+          descripcion: parsed.descripcion || f.descripcion,
+          tela: parsed.tela || f.tela,
+          bordado: parsed.bordado || f.bordado,
+          visera: parsed.visera || f.visera,
+          broche: parsed.broche || f.broche,
+          acabados: parsed.acabados || f.acabados,
+        }));
+        if (parsed.tags?.length) setTagsInput(parsed.tags.join(', '));
+        setAiPrompt('');
+      }
+    } catch {
+      showError('Error al conectar con Gemini. Verifica la API key.');
+    }
+    setAiLoading(false);
+  };
 
   useEffect(() => { if (auth) load(); }, [auth]);
 
@@ -301,6 +369,33 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
             </div>
 
             <div className="p-6 space-y-6">
+
+              {/* IA Assistant */}
+              <div className="bg-gradient-to-r from-dark to-dark/90 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">✨</span>
+                  <p className="text-cream text-[11px] font-medium tracking-widest uppercase">Rellenar con Gemini IA</p>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Ej: gorra negra béisbol bordado 3D lana para equipos..."
+                    value={aiPrompt}
+                    onChange={e => setAiPrompt(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && generateWithAI()}
+                    className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-[12px] text-cream placeholder:text-white/40 focus:outline-none focus:border-primary transition-colors"
+                  />
+                  <button
+                    onClick={generateWithAI}
+                    disabled={aiLoading || !aiPrompt.trim()}
+                    className="px-4 py-2 bg-primary text-cream rounded-lg text-[11px] font-medium tracking-wide uppercase hover:bg-primary-dark transition-colors disabled:opacity-50 flex-shrink-0"
+                  >
+                    {aiLoading ? '...' : 'Generar'}
+                  </button>
+                </div>
+                <p className="text-white/30 text-[9px] mt-2">Describe el producto y la IA rellena nombre, descripción y ficha técnica.</p>
+              </div>
+
               {/* Image upload */}
               <div>
                 <label className="text-[10px] text-grey font-medium uppercase tracking-widest block mb-2">Foto del producto</label>
