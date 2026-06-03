@@ -12,6 +12,7 @@ export interface CapProduct {
   nombre: string;
   categoria: string;
   imagen: string;
+  imagenes?: string[];
   descripcion: string;
   fichaTecnica: FichaTecnica;
   moq: number;

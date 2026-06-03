@@ -15,6 +15,7 @@ export interface DBProduct {
   entrega: string;
   precio: string;
   tags: string[];
+  imagenes: string[];
   tela: string;
   bordado: string;
   visera: string;

@@ -21,6 +21,11 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
   const [copied, setCopied] = useState(false);
   const [zoom, setZoom] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+  const allImages = [cap?.imagen, ...(cap?.imagenes || [])].filter(Boolean) as string[];
+  const [activeImg, setActiveImg] = useState(0);
+
+  // Reset active image when product changes
+  React.useEffect(() => { setActiveImg(0); }, [cap?.id]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -67,7 +72,7 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
           style={{ cursor: zoom ? 'crosshair' : 'default' }}
         >
           <img
-            src={cap.imagen}
+            src={allImages[activeImg] || cap.imagen}
             alt={cap.nombre}
             className="w-full max-h-[400px] md:max-h-full object-contain drop-shadow-xl transition-transform duration-200"
             style={zoom ? {
@@ -75,6 +80,20 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
               transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
             } : {}}
           />
+          {/* Thumbnails */}
+          {allImages.length > 1 && (
+            <div className="absolute bottom-16 left-0 right-0 flex justify-center gap-2 px-4">
+              {allImages.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={e => { e.stopPropagation(); setActiveImg(i); setZoom(false); }}
+                  className={`w-10 h-10 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${activeImg === i ? 'border-primary scale-110' : 'border-white/50 hover:border-white'}`}
+                >
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
           {!zoom && (
             <div className="absolute bottom-16 right-4 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[9px] text-grey font-medium shadow-sm pointer-events-none">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

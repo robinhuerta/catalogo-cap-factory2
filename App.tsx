@@ -14,6 +14,7 @@ const toCapProduct = (p: DBProduct): CapProduct => ({
   nombre: p.nombre,
   categoria: p.categoria,
   imagen: p.imagen,
+  imagenes: p.imagenes || [],
   descripcion: p.descripcion,
   moq: p.moq,
   entrega: p.entrega,
