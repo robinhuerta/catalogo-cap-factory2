@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { id: 'catalog', label: 'Catálogo' },
   { id: 'portfolio', label: 'Proyectos' },
   { id: 'technology', label: 'Fábrica' },
-  { id: 'b2b', label: 'B2B' }
+  { id: 'b2b', label: 'Pedidos grandes' }
 ] as const;
 
 const Header: React.FC<HeaderProps> = ({

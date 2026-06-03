@@ -31,30 +31,30 @@ const MARQUEE_IMAGES: string[] = [];
 const B2B_BENEFITS = [
   {
     id: 'b1',
-    title: 'Tiempos de entrega prioritarios',
-    short: 'Entregas garantizadas en plazos récord para pedidos de alto volumen.',
-    details: 'Contamos con líneas de producción dedicadas exclusivamente a pedidos corporativos. Reducimos los tiempos de entrega estándar en un 30%, asegurando que tu mercadería llegue a tiempo para lanzamientos, eventos o reposición de inventario.',
+    title: 'Te entregamos a tiempo, siempre',
+    short: 'Sabemos que tienes fechas. Planificamos la producción para que llegues puntual.',
+    details: 'Trabajamos con cronogramas claros desde el primer día. Si tienes un evento, lanzamiento o fecha límite, nos adaptamos a tu calendario. Los pedidos grandes tienen línea de producción propia para no mezclarse con otros trabajos.',
     icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
   },
   {
     id: 'b2',
-    title: 'Marca blanca de lujo (Private Label)',
-    short: 'Personalización total desde etiquetas internas hasta empaques de retail.',
-    details: 'No solo bordamos tu logo. Desarrollamos una experiencia de marca completa: etiquetas de satín tejidas, cintas grabadas, forros interiores premium y empaques individuales personalizados.',
+    title: 'Tu logo en todo, hasta en la etiqueta',
+    short: 'Ponemos tu marca en cada detalle: bordado, etiqueta interna, empaque.',
+    details: 'No es solo bordar el logo en la copa. Podemos hacerlo en la visera, poner tu etiqueta de tela por dentro, personalizar el broche trasero y hasta empacar cada gorra en bolsa individual con tu diseño. Todo para que se vea como una marca seria.',
     icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
   },
   {
     id: 'b3',
-    title: 'Escalabilidad y precios tier',
-    short: 'Estructura de costos dinámica que premia tu volumen de crecimiento.',
-    details: 'Nuestra arquitectura de precios está diseñada para socios estratégicos. Desde 500 hasta 50,000 unidades, los márgenes crecen con tu volumen y ofrecemos condiciones de pago preferenciales.',
+    title: 'Más pides, menos pagas por unidad',
+    short: 'El precio baja según la cantidad. Desde 50 hasta miles de unidades.',
+    details: 'El precio por gorra cambia según cuántas pides. Con 50 unidades ya arrancas. Con 300 el precio baja notablemente. Con 1,000 o más, el ahorro es muy significativo. Puedes usar nuestra calculadora para ver exactamente cuánto sale tu pedido.',
     icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z'
   },
   {
     id: 'b4',
-    title: 'Logística global certificada',
-    short: 'Gestión integral de exportación a tus almacenes mundiales.',
-    details: 'Gestionamos aduanas, documentación de exportación desde Perú y transporte multimodal (aéreo o marítimo) con tracking en tiempo real hasta tu centro de distribución en cualquier continente.',
+    title: 'Enviamos a cualquier parte del mundo',
+    short: 'Lima, provincias o al extranjero. Nos encargamos del envío.',
+    details: 'Despachamos a cualquier ciudad del Perú y también al extranjero. Si eres de otro país y quieres hacer un pedido, coordinamos el envío internacional con guía de seguimiento. Tú solo recibes las gorras en tu puerta.',
     icon: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
   }
 ];
@@ -351,37 +351,37 @@ const App: React.FC = () => {
         {/* ── B2B ──────────────────────────────────────────── */}
         {viewMode === 'b2b' && (
           <div className="max-w-[1600px] mx-auto px-6 sm:px-10 pt-8 pb-24">
-            <Breadcrumb label="Canal B2B & Corporativo" onHome={() => setViewMode('home')} />
+            <Breadcrumb label="Pedidos grandes" onHome={() => setViewMode('home')} />
 
             <div className="grid lg:grid-cols-2 gap-16 items-start mt-10 mb-20">
               {/* Sticky left */}
               <div className="lg:sticky lg:top-28">
-                <span className="text-[9px] font-medium text-primary tracking-[0.5em] uppercase block mb-4">Alianzas por volumen</span>
+                <span className="text-[9px] font-medium text-primary tracking-[0.5em] uppercase block mb-4">Para empresas y negocios</span>
                 <h2 className="font-display text-4xl md:text-5xl font-bold text-dark leading-[0.9] uppercase mb-5">
-                  Potencia tu marca<br />con fabricación<br />directa.
+                  ¿Necesitas gorras<br />para tu negocio<br />o evento?
                 </h2>
                 <p className="text-grey text-sm leading-relaxed mb-8 max-w-md">
-                  Soluciones integrales para marcas de retail, startups y corporaciones internacionales que buscan merchandising de alta gama.
+                  Trabajamos directo contigo, sin intermediarios. Desde 50 unidades con tu logo, colores y diseño. Te asesoramos en todo el proceso.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
-                    onClick={() => window.open(`https://wa.me/${GLOBAL_CONFIG.WHATSAPP_NUMBER}?text=Hola%2C%20quisiera%20informaci%C3%B3n%20sobre%20ventas%20corporativas%20B2B`, '_blank')}
+                    onClick={() => window.open(`https://wa.me/${GLOBAL_CONFIG.WHATSAPP_NUMBER}?text=Hola%2C%20quiero%20hacer%20un%20pedido%20de%20gorras%20personalizadas%20para%20mi%20negocio`, '_blank')}
                     className="px-8 py-3.5 bg-dark text-cream text-[10px] font-medium tracking-widest uppercase rounded-full hover:bg-primary transition-colors"
                   >
-                    Contactar ejecutivo
+                    Escribir por WhatsApp
                   </button>
                   <button
                     onClick={() => setViewMode('catalog')}
                     className="px-8 py-3.5 border border-dark text-dark text-[10px] font-medium tracking-widest uppercase rounded-full hover:bg-dark hover:text-cream transition-colors"
                   >
-                    Ver modelos base
+                    Ver el catálogo
                   </button>
                 </div>
               </div>
 
               {/* Benefits accordion */}
               <div className="space-y-3">
-                <p className="text-[9px] text-grey font-medium uppercase tracking-widest mb-5">Beneficios corporativos exclusivos</p>
+                <p className="text-[9px] text-grey font-medium uppercase tracking-widest mb-5">¿Por qué trabajar con nosotros?</p>
                 {B2B_BENEFITS.map(benefit => {
                   const isOpen = expandedBenefit === benefit.id;
                   return (
@@ -421,14 +421,14 @@ const App: React.FC = () => {
 
             {/* Process steps */}
             <div className="bg-white border border-grey-border rounded-2xl p-10 md:p-14">
-              <p className="text-[9px] text-primary font-medium tracking-[0.5em] uppercase text-center mb-2">Flujo de trabajo B2B</p>
-              <h3 className="font-display text-2xl font-bold text-dark text-center mb-10">Tu proyecto en 4 etapas</h3>
+              <p className="text-[9px] text-primary font-medium tracking-[0.5em] uppercase text-center mb-2">Así funciona</p>
+              <h3 className="font-display text-2xl font-bold text-dark text-center mb-10">Tu pedido en 4 pasos simples</h3>
               <div className="grid md:grid-cols-4 gap-6">
                 {[
-                  { step: '01', title: 'Briefing', desc: 'Definimos diseño, materiales y volúmenes.' },
-                  { step: '02', title: 'Muestreo', desc: 'Creamos una muestra física para tu aprobación.' },
-                  { step: '03', title: 'Producción', desc: 'Fabricación con control de calidad estricto.' },
-                  { step: '04', title: 'Entrega', desc: 'Despacho a tus centros de distribución.' }
+                  { step: '01', title: 'Nos escribes', desc: 'Cuéntanos cuántas gorras necesitas y qué diseño tienes en mente.' },
+                  { step: '02', title: 'Te enviamos una muestra', desc: 'Hacemos una muestra física para que la apruebes antes de producir.' },
+                  { step: '03', title: 'Producimos tu pedido', desc: 'Fabricamos todas las gorras con control de calidad en cada una.' },
+                  { step: '04', title: 'Las recibes en tu puerta', desc: 'Enviamos a tu dirección en Lima, provincias o el extranjero.' }
                 ].map((item, i) => (
                   <div key={i} className="relative">
                     <div className="p-6 rounded-xl border border-grey-border bg-cream hover:shadow-md hover:-translate-y-1 transition-all duration-300">
@@ -445,11 +445,14 @@ const App: React.FC = () => {
             {/* CTA */}
             <div className="mt-20 bg-dark rounded-2xl p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8">
               <div>
-                <h3 className="font-display text-3xl font-bold text-cream mb-2">¿Hablamos de negocios?</h3>
-                <p className="text-cream/50 text-sm">Respuesta garantizada en menos de 2 horas.</p>
+                <h3 className="font-display text-3xl font-bold text-cream mb-2">¿Listo para cotizar?</h3>
+                <p className="text-cream/50 text-sm">Te respondemos en menos de 2 horas. Sin compromisos.</p>
               </div>
-              <button className="flex-shrink-0 px-10 py-4 bg-primary text-cream text-[11px] font-medium tracking-widest uppercase rounded-full hover:bg-white hover:text-dark transition-colors shadow-lg">
-                Agendar una reunión
+              <button
+                onClick={() => window.open(`https://wa.me/${GLOBAL_CONFIG.WHATSAPP_NUMBER}?text=Hola%2C%20quisiera%20cotizar%20gorras%20personalizadas`, '_blank')}
+                className="flex-shrink-0 px-10 py-4 bg-primary text-cream text-[11px] font-medium tracking-widest uppercase rounded-full hover:bg-white hover:text-dark transition-colors shadow-lg"
+              >
+                Cotizar por WhatsApp
               </button>
             </div>
           </div>
