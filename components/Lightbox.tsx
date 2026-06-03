@@ -51,7 +51,7 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-dark/80 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full max-w-5xl bg-cream rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[92vh]">
+      <div className="relative w-full max-w-6xl bg-cream rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[92vh]">
 
         {/* Close */}
         <button
@@ -64,7 +64,7 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
         </button>
 
         {/* Image panel */}
-        <div className="w-full md:w-[45%] bg-grey-light flex flex-col relative flex-shrink-0 select-none">
+        <div className="w-full md:w-[60%] bg-grey-light flex flex-col relative flex-shrink-0 select-none">
           {/* Zoomable area */}
           <div
             className="flex-1 flex items-center justify-center p-6 overflow-hidden relative"
@@ -76,7 +76,7 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
             <img
               src={allImages[activeImg] || cap.imagen}
               alt={cap.nombre}
-              className="w-full max-h-[300px] md:max-h-[380px] object-contain drop-shadow-xl transition-transform duration-150"
+              className="w-full max-h-[380px] md:max-h-[500px] object-contain drop-shadow-xl transition-transform duration-150"
               style={zoom ? { transform: 'scale(2.5)', transformOrigin: `${zoomPos.x}% ${zoomPos.y}%` } : {}}
             />
             {!zoom && (
