@@ -5,7 +5,7 @@ import { CapProduct, ClientProject, TechInnovation } from './types';
  * 🛠️ CONFIGURACIÓN GLOBAL
  */
 export const GLOBAL_CONFIG = {
-  WHATSAPP_NUMBER: "51999999999", // Cambiar por el número real
+  WHATSAPP_NUMBER: "51930404573",
   COMPANY_NAME: "Cap Factory Perú",
   MESSAGE_PREFIX: "Hola, Cap Factory. Me gustaría solicitar una cotización por los siguientes modelos de muestra:\n\n"
 };
