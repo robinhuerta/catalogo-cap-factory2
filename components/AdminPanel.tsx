@@ -52,6 +52,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const [bulkModal, setBulkModal] = useState(false);
   const [bulkCategory, setBulkCategory] = useState(CATEGORIES[0]);
   const [zoomImg, setZoomImg] = useState<string | null>(null);
+  const lastForm = useRef<Omit<DBProduct, 'id' | 'created_at'>>(EMPTY);
   const fileRef = useRef<HTMLInputElement>(null);
   const bulkRef = useRef<HTMLInputElement>(null);
 
@@ -71,9 +72,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   };
 
   const openAdd = () => {
-    setForm(EMPTY);
+    setForm({
+      ...lastForm.current,
+      nombre: '',
+      imagen: '',
+      descripcion: '',
+      activo: true,
+    });
     setEditId(null);
-    setTagsInput('');
+    setTagsInput(lastForm.current.tags.join(', '));
     setModal(true);
   };
 
@@ -131,6 +138,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
     } else {
       await supabase.from('products').insert([payload]);
     }
+    lastForm.current = payload;
     await load();
     setModal(false);
     setSaving(false);
