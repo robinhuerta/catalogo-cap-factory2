@@ -38,7 +38,7 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
   };
 
   const handleWhatsApp = () => {
-    const msg = `Hola, me interesa el modelo ${cap.nombre}. ¿Podrían cotizarme por mayor?`;
+    const msg = `Hola Cap Factory, me interesa este modelo:\n\n*${cap.nombre}*\nCategoría: ${cap.categoria}\n${cap.precio ? `Precio visto: ${cap.precio}\n` : ''}Foto: ${cap.imagen}\n\n¿Podrían cotizarme por mayor?`;
     window.open(`https://wa.me/${GLOBAL_CONFIG.WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 

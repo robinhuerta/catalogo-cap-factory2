@@ -17,8 +17,9 @@ const QuoteDrawer: React.FC<QuoteDrawerProps> = ({ isOpen, onClose, items, onRem
     if (items.length === 0) return;
     let message = GLOBAL_CONFIG.MESSAGE_PREFIX;
     items.forEach((item, i) => {
-      message += `${i + 1}. *${item.nombre}*\n   Cantidad: ${item.quantity}`;
+      message += `${i + 1}. *${item.nombre}*\n   Categoría: ${item.categoria}\n   Cantidad: ${item.quantity}`;
       if (item.color) message += `\n   Color/Notas: ${item.color}`;
+      if (item.imagen) message += `\n   Foto: ${item.imagen}`;
       message += '\n\n';
     });
     message += 'Por favor contáctenme para coordinar los detalles. ¡Gracias!';
