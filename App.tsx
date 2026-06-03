@@ -5,7 +5,7 @@ import FilterBar from './components/FilterBar';
 import CapCard from './components/CapCard';
 import Lightbox from './components/Lightbox';
 import QuoteDrawer from './components/QuoteDrawer';
-import { CAPS_DATA, CATEGORIES, CLIENT_PROJECTS, TECH_INNOVATIONS } from './constants';
+import { CAPS_DATA, CATEGORIES, CLIENT_PROJECTS, TECH_INNOVATIONS, GLOBAL_CONFIG } from './constants';
 import { CapProduct, Category, QuoteItem, ViewMode } from './types';
 
 const MARQUEE_IMAGES = [
@@ -73,8 +73,19 @@ const App: React.FC = () => {
       setIsDrawerOpen(true);
       return;
     }
-    setQuoteList([...quoteList, { ...cap, timestamp: Date.now() }]);
+    setQuoteList([...quoteList, { 
+      ...cap, 
+      timestamp: Date.now(),
+      quantity: cap.moq || 50, // Default to MOQ or 50
+      color: ''
+    }]);
     setIsDrawerOpen(true);
+  };
+
+  const updateQuoteItem = (id: string, updates: Partial<QuoteItem>) => {
+    setQuoteList(quoteList.map(item => 
+      item.id === id ? { ...item, ...updates } : item
+    ));
   };
 
   const removeFromQuote = (id: string) => {
@@ -111,8 +122,8 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col transition-all duration-700 bg-white">
-      <div className="bg-blue-600 text-white text-[9px] font-black uppercase tracking-[0.4em] py-2 text-center">
+    <div className="min-h-screen flex flex-col transition-all duration-700 bg-white text-dark">
+      <div className="bg-primary text-white text-[9px] font-black uppercase tracking-[0.4em] py-2 text-center">
         Producción Industrial de Gorras • Envíos Globales • Calidad de Exportación
       </div>
 
@@ -138,17 +149,17 @@ const App: React.FC = () => {
                       onClick={() => handleCategoryClick(cat)} 
                       className="group w-full flex items-center justify-start py-4 border-b border-gray-100 hover:border-black transition-all duration-500 text-left"
                     >
-                      <span className="text-[9px] font-black text-gray-200 group-hover:text-blue-600 transition-colors mr-6">0{idx + 1}</span>
+                      <span className="text-[9px] font-black text-gray-200 group-hover:text-primary transition-colors mr-6">0{idx + 1}</span>
                       <h3 className="text-xl md:text-2xl font-black text-gray-900 group-hover:tracking-[0.1em] transition-all duration-700 uppercase tracking-tighter">{cat}</h3>
                     </button>
                   ))}
                 </div>
               </div>
               <div className="animate-in fade-in slide-in-from-right-10 duration-1000 text-left lg:text-right flex flex-col lg:items-end order-1 lg:order-2">
-                <span className="text-blue-600 font-black text-[9px] uppercase tracking-[0.5em] mb-4 block">Fábrica Directa 2024</span>
+                <span className="text-primary font-black text-[9px] uppercase tracking-[0.5em] mb-4 block">Fábrica Directa 2024</span>
                 <h2 className="text-5xl md:text-6xl font-black text-gray-900 tracking-tighter leading-[0.9] mb-4">Tu Socio en Gorras<br/>Personalizadas.</h2>
                 <h3 className="text-lg md:text-xl font-medium text-gray-400 tracking-tight mb-8">Del taller a tu negocio. <span className="text-black font-black">Sin intermediarios.</span></h3>
-                <button onClick={() => setViewMode('catalog')} className="mt-8 h-12 px-10 bg-black text-white text-[9px] font-black uppercase tracking-[0.3em] rounded-full hover:bg-blue-600 transition-all shadow-xl">Ver Muestras</button>
+                <button onClick={() => setViewMode('catalog')} className="mt-8 h-12 px-10 bg-black text-white text-[9px] font-black uppercase tracking-[0.3em] rounded-full hover:bg-primary transition-all shadow-xl">Ver Muestras</button>
               </div>
             </div>
             <div className="relative w-full overflow-hidden bg-gray-50 py-10 border-y border-gray-100">
@@ -179,7 +190,7 @@ const App: React.FC = () => {
                   Mostrando <span className="text-gray-900">{filteredCaps.length}</span> modelos encontrados
                 </p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-10">
                 {filteredCaps.length > 0 ? (
                   filteredCaps.map(cap => (
                     <CapCard 
@@ -201,7 +212,7 @@ const App: React.FC = () => {
                     <p className="text-gray-400 font-medium text-sm mb-8">No pudimos encontrar gorras para "{searchQuery}".</p>
                     <button 
                       onClick={() => {setSearchQuery(''); setActiveCategory('Todas');}} 
-                      className="px-8 py-3 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-600 transition-all shadow-xl"
+                      className="px-8 py-3 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary transition-all shadow-xl"
                     >
                       Limpiar todos los filtros
                     </button>
@@ -211,6 +222,16 @@ const App: React.FC = () => {
             </div>
           </div>
         )}
+        
+        {/* Floating WhatsApp Button */}
+        <a 
+          href={`https://wa.me/${GLOBAL_CONFIG.WHATSAPP_NUMBER}`} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="fixed bottom-6 right-6 z-50 w-16 h-16 bg-[#25D366] rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform animate-bounce-slow"
+        >
+          <svg className="w-8 h-8 text-white fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.891 11.891-11.891 3.181 0 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.481 8.403 0 6.556-5.332 11.891-11.891 11.891-2.01 0-3.987-.512-5.741-1.488l-6.252 1.639zm6.059-4.145c1.616.96 3.104 1.458 4.717 1.458 5.464 0 9.909-4.444 9.909-9.909 0-2.639-1.027-5.122-2.892-6.988-1.866-1.865-4.35-2.891-6.99-2.891-5.465 0-9.91 4.444-9.91 9.91 0 1.884.526 3.633 1.523 5.17l-1.006 3.674 3.753-.984zm11.238-6.19c-.31-.156-1.833-.905-2.112-1.006-.28-.101-.484-.151-.688.156-.204.307-.79.99-.968 1.2-.178.209-.356.234-.666.078-.31-.156-1.31-.483-2.494-1.54-.922-.823-1.543-1.838-1.724-2.148-.18-.31-.02-.477.135-.632.14-.139.31-.36.466-.541.156-.181.208-.307.312-.512.103-.205.052-.385-.026-.541-.078-.156-.688-1.657-.942-2.268-.247-.597-.498-.517-.688-.527-.179-.009-.384-.01-.589-.01s-.54.077-.821.385c-.282.308-1.077 1.05-1.077 2.564s1.103 2.974 1.256 3.179c.153.205 2.17 3.313 5.257 4.646.734.317 1.307.507 1.754.65.738.234 1.41.201 1.94.122.592-.088 1.833-.75 2.09-1.474.256-.724.256-1.344.179-1.474-.076-.131-.282-.209-.592-.366z"/></svg>
+        </a>
 
         {viewMode === 'portfolio' && (
           <div className="max-w-[1600px] mx-auto px-6 sm:px-12 lg:px-16 pt-10 pb-32 animate-in fade-in duration-700 text-left">
@@ -242,9 +263,8 @@ const App: React.FC = () => {
             </nav>
 
             <div className="mb-20">
-              <span className="text-blue-600 font-black text-[9px] uppercase tracking-[0.5em] mb-4 block">Capacidad Industrial</span>
               <h2 className="text-5xl md:text-7xl font-black text-gray-900 tracking-tighter uppercase leading-[0.8]">
-                Ingeniería<br/><span className="text-blue-600">Textil.</span>
+                Ingeniería<br/><span className="text-primary">Textil.</span>
               </h2>
               <p className="mt-8 text-gray-400 max-w-xl text-sm font-medium leading-relaxed">
                 Nuestra planta está equipada con tecnología de punta para garantizar que cada puntada cumpla con los estándares internacionales de retail premium.
@@ -263,7 +283,7 @@ const App: React.FC = () => {
 
                   {/* Static Content (Always visible) */}
                   <div className="absolute inset-0 p-12 flex flex-col justify-end transition-all duration-500 group-hover:opacity-0 group-hover:translate-y-4">
-                    <span className="text-blue-400 font-black text-[8px] uppercase tracking-[0.5em] mb-4">
+                    <span className="text-primary font-black text-[8px] uppercase tracking-[0.5em] mb-4">
                       PROCESO ID: {tech.id}
                     </span>
                     <h3 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">
@@ -272,7 +292,7 @@ const App: React.FC = () => {
                   </div>
 
                   {/* Reveal Content (Hover Overlay) */}
-                  <div className="absolute inset-0 bg-blue-600/95 backdrop-blur-md p-12 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-8 group-hover:translate-y-0">
+                  <div className="absolute inset-0 bg-primary/95 backdrop-blur-md p-12 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-8 group-hover:translate-y-0">
                     <div className="mb-10">
                       <h4 className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em] mb-4">Ingeniería Aplicada</h4>
                       <p className="text-white text-base font-medium leading-relaxed">
@@ -294,7 +314,7 @@ const App: React.FC = () => {
                     <div className="mt-12">
                       <button 
                         onClick={(e) => { e.stopPropagation(); setViewMode('catalog'); }}
-                        className="px-8 py-4 bg-white text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-black hover:text-white transition-all shadow-xl"
+                        className="px-8 py-4 bg-white text-primary text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-black hover:text-white transition-all shadow-xl"
                       >
                         Aplicar a mi Proyecto
                       </button>
@@ -310,8 +330,8 @@ const App: React.FC = () => {
                 <p className="text-gray-500 text-sm font-medium">Nuestro departamento de I+D desarrolla nuevas técnicas de bordado y acabados cada trimestre. Si tienes un diseño complejo, nosotros tenemos la solución técnica.</p>
               </div>
               <button 
-                onClick={() => window.open('https://wa.me/51999999999?text=Hola%2C%20quisiera%20consultar%20sobre%20una%20t%C3%A9cnica%20de%20fabricaci%C3%B3n%20especial.', '_blank')}
-                className="px-12 py-5 bg-black text-white text-[11px] font-black uppercase tracking-widest rounded-full hover:bg-blue-600 transition-all shadow-2xl"
+                onClick={() => window.open(`https://wa.me/${GLOBAL_CONFIG.WHATSAPP_NUMBER}?text=Hola%2C%20quisiera%20consultar%20sobre%20una%20t%C3%A9cnica%20de%20fabricaci%C3%B3n%20especial.`, '_blank')}
+                className="px-12 py-5 bg-black text-white text-[11px] font-black uppercase tracking-widest rounded-full hover:bg-primary transition-all shadow-2xl"
               >
                 Consultar con un Técnico
               </button>
@@ -328,14 +348,14 @@ const App: React.FC = () => {
             </nav>
 
             <div className="mb-20 grid lg:grid-cols-2 gap-16 items-start text-left">
-              <div className="sticky top-32">
-                <span className="text-blue-600 font-black text-[9px] uppercase tracking-[0.5em] mb-4 block">Alianzas por Volumen</span>
+              <div className="sticky top-32 text-left">
+                <span className="text-primary font-black text-[9px] uppercase tracking-[0.5em] mb-4 block">Alianzas por Volumen</span>
                 <h2 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase mb-6 leading-[0.9]">Potencia tu Marca con<br/>Fabricación Directa.</h2>
                 <p className="text-gray-500 text-sm font-medium leading-relaxed mb-10 max-w-lg">
                   Nuestra división B2B ofrece soluciones integrales para marcas de retail, startups en crecimiento y corporaciones internacionales que buscan merchandising de alta gama. 
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <button onClick={() => window.open('https://wa.me/51999999999?text=Hola%2C%20quisiera%20informaci%C3%B3n%20sobre%20ventas%20corporativas%20B2B', '_blank')} className="px-10 py-4 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-blue-600 transition-all shadow-xl">Contactar Ejecutivo</button>
+                  <button onClick={() => window.open(`https://wa.me/${GLOBAL_CONFIG.WHATSAPP_NUMBER}?text=Hola%2C%20quisiera%20informaci%C3%B3n%20sobre%20ventas%20corporativas%20B2B`, '_blank')} className="px-10 py-4 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-primary transition-all shadow-xl">Contactar Ejecutivo</button>
                   <button onClick={() => setViewMode('catalog')} className="px-10 py-4 border border-black text-black text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-black hover:text-white transition-all">Ver Modelos Base</button>
                 </div>
               </div>
@@ -348,13 +368,13 @@ const App: React.FC = () => {
                   return (
                     <div 
                       key={benefit.id} 
-                      className={`group border rounded-[2rem] transition-all duration-500 overflow-hidden ${isExpanded ? 'bg-blue-600 border-blue-600 shadow-2xl' : 'bg-white border-gray-100 hover:border-blue-200'}`}
+                      className={`group border rounded-[2rem] transition-all duration-500 overflow-hidden ${isExpanded ? 'bg-primary border-primary shadow-2xl' : 'bg-white border-gray-100 hover:border-primary/20'}`}
                     >
-                      <button 
+                    <button 
                         onClick={() => setExpandedBenefit(isExpanded ? null : benefit.id)}
                         className="w-full p-8 flex items-center text-left focus:outline-none"
                       >
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 flex-shrink-0 ${isExpanded ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'}`}>
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 flex-shrink-0 ${isExpanded ? 'bg-white/20 text-white' : 'bg-primary/5 text-primary group-hover:bg-primary group-hover:text-white'}`}>
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={benefit.icon} />
                           </svg>
@@ -399,7 +419,7 @@ const App: React.FC = () => {
 
             <div className="bg-gray-50 rounded-[3rem] p-12 md:p-20">
                <div className="text-center mb-16">
-                 <span className="text-blue-600 font-black text-[9px] uppercase tracking-[0.5em] mb-4 block">Flujo de Trabajo B2B</span>
+                 <span className="text-primary font-black text-[9px] uppercase tracking-[0.5em] mb-4 block">Flujo de Trabajo B2B</span>
                  <h3 className="text-3xl font-black uppercase tracking-tighter text-gray-900">Tu Proyecto en 4 Etapas</h3>
                </div>
                
@@ -412,7 +432,7 @@ const App: React.FC = () => {
                   ].map((item, i) => (
                     <div key={i} className="relative group">
                       <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm transition-all duration-500 group-hover:-translate-y-2 group-hover:shadow-xl text-left">
-                        <span className="text-[32px] font-black text-blue-600/10 mb-4 block leading-none">{item.step}</span>
+                        <span className="text-[32px] font-black text-primary/10 mb-4 block leading-none">{item.step}</span>
                         <h4 className="text-[12px] font-black uppercase tracking-widest mb-3 text-gray-900">{item.title}</h4>
                         <p className="text-[10px] text-gray-400 font-medium leading-relaxed">{item.desc}</p>
                       </div>
@@ -423,14 +443,14 @@ const App: React.FC = () => {
             </div>
 
             <div className="mt-32 border-t border-gray-100 pt-32 text-center">
-               <h3 className="text-5xl font-black tracking-tighter uppercase mb-10 text-gray-900">¿Hablamos de negocios?</h3>
-               <div className="bg-blue-600 text-white p-12 rounded-[3rem] max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between text-left">
-                  <div className="mb-8 md:mb-0">
-                    <p className="text-2xl font-black mb-2 uppercase tracking-tighter">Área de Cuentas Clave</p>
-                    <p className="text-[11px] font-medium opacity-80 uppercase tracking-widest">Respuesta garantizada en menos de 2 horas</p>
-                  </div>
-                  <button className="px-12 py-5 bg-white text-blue-600 text-[11px] font-black uppercase tracking-widest rounded-full hover:scale-105 transition-transform shadow-2xl">Agendar una Reunión</button>
-               </div>
+                <h3 className="text-5xl font-black tracking-tighter uppercase mb-10 text-gray-900">¿Hablamos de negocios?</h3>
+                <div className="bg-primary text-white p-12 rounded-[3rem] max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between text-left">
+                   <div className="mb-8 md:mb-0 text-left">
+                     <p className="text-2xl font-black mb-2 uppercase tracking-tighter">Área de Cuentas Clave</p>
+                     <p className="text-[11px] font-medium opacity-80 uppercase tracking-widest">Respuesta garantizada en menos de 2 horas</p>
+                   </div>
+                   <button className="px-12 py-5 bg-white text-primary text-[11px] font-black uppercase tracking-widest rounded-full hover:scale-105 transition-transform shadow-2xl">Agendar una Reunión</button>
+                </div>
             </div>
           </div>
         )}
@@ -447,7 +467,13 @@ const App: React.FC = () => {
       </footer>
 
       <Lightbox cap={selectedCap} onClose={() => setSelectedCap(null)} onAddToQuote={() => selectedCap && addToQuote(selectedCap)} isQuoted={!!selectedCap && !!quoteList.find(q => q.id === selectedCap.id)} />
-      <QuoteDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} items={quoteList} onRemove={removeFromQuote} />
+      <QuoteDrawer 
+        isOpen={isDrawerOpen} 
+        onClose={() => setIsDrawerOpen(false)} 
+        items={quoteList} 
+        onRemove={removeFromQuote}
+        onUpdate={updateQuoteItem}
+      />
     </div>
   );
 };

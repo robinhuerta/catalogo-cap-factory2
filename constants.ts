@@ -2,6 +2,15 @@
 import { CapProduct, ClientProject, TechInnovation } from './types';
 
 /**
+ * 🛠️ CONFIGURACIÓN GLOBAL
+ */
+export const GLOBAL_CONFIG = {
+  WHATSAPP_NUMBER: "51999999999", // Cambiar por el número real
+  COMPANY_NAME: "Cap Factory Perú",
+  MESSAGE_PREFIX: "Hola, Cap Factory. Me gustaría solicitar una cotización por los siguientes modelos de muestra:\n\n"
+};
+
+/**
  * 🚀 CONFIGURACIÓN DE CATÁLOGO COMPLETO
  * ----------------------------------------------------------------
  * He restaurado las 6 categorías principales de tu fábrica.
@@ -19,6 +28,7 @@ export const CAPS_DATA: CapProduct[] = [
     moq: 50,
     entrega: "15-18 días",
     tags: ["Premium", "Bordado 3D"],
+    precio: "Desde S/ 25.00",
     fichaTecnica: {
       tela: "Acrílico/Lana de alta densidad",
       bordado: "Frontal 3D (Relieve) de 5mm",
@@ -31,7 +41,7 @@ export const CAPS_DATA: CapProduct[] = [
     id: "2",
     nombre: "Trucker de Malla Pro",
     categoria: "Trucker (Malla)",
-    imagen: "https://images.unsplash.com/photo-1595433707802-6806f3f04f0d?auto=format&fit=crop&q=80&w=800", 
+    imagen: "https://images.unsplash.com/photo-1595433707802-6806f3f04f0d?auto=format&fit=crop&q=80&w=800",
     descripcion: "Combinación de frente acolchado y malla transpirable. Perfecta para climas cálidos y estilos retro.",
     moq: 100,
     entrega: "12-15 días",

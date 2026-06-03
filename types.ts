@@ -17,6 +17,7 @@ export interface CapProduct {
   moq: number;
   entrega: string;
   tags: string[];
+  precio?: string;
 }
 
 export interface ClientProject {
@@ -41,4 +42,6 @@ export type ViewMode = 'home' | 'catalog' | 'portfolio' | 'technology' | 'b2b';
 
 export interface QuoteItem extends CapProduct {
   timestamp: number;
+  quantity: number;
+  color?: string;
 }

@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { CapProduct } from '../types';
+import { GLOBAL_CONFIG } from '../constants';
 
 interface LightboxProps {
   cap: CapProduct | null;
@@ -21,9 +22,8 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
   };
 
   const handleDirectWhatsApp = () => {
-    const phoneNumber = "51999999999";
-    const message = `Hola, me interesa el modelo ${cap.nombre} que vi en su catálogo, quisiera saber el precio por mayor`;
-    const waUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    const message = `Hola, me interesa el modelo ${cap.nombre} que vi en su catálogo, quisiera saber el precio por mayor.`;
+    const waUrl = `https://wa.me/${GLOBAL_CONFIG.WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     window.open(waUrl, '_blank');
   };
 
@@ -60,11 +60,12 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
 
         <div className="w-full md:w-1/2 p-10 md:p-12 overflow-y-auto bg-white text-left">
           <div className="mb-10">
-            <span className="text-blue-600 text-[9px] font-black uppercase tracking-[0.4em] mb-3 block">Ficha Técnica de Producción / {cap.categoria}</span>
+            <span className="text-primary font-black text-[9px] uppercase tracking-[0.5em] mb-2 block">{cap.categoria}</span>
             <h2 className="text-3xl font-black text-gray-900 leading-none tracking-tighter uppercase">
               {cap.nombre}
             </h2>
-            <p className="mt-5 text-gray-400 text-sm font-medium leading-relaxed italic">
+            <p className="text-2xl font-black text-primary mt-2 tracking-tighter">{cap.precio || 'Desde S/ 25.00'}</p>
+            <p className="mt-4 text-gray-400 text-sm font-medium leading-relaxed italic">
               "{cap.descripcion}"
             </p>
           </div>
@@ -73,7 +74,7 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
             <h3 className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] border-b border-gray-50 pb-3">Análisis Técnico</h3>
             {specIcons.map((spec, i) => (
               <div key={i} className="flex items-center group bg-gray-50/50 p-3 rounded-xl border border-transparent hover:border-gray-100 transition-all">
-                <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex-shrink-0 flex items-center justify-center text-blue-600">
+                <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex-shrink-0 flex items-center justify-center text-primary">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={spec.icon} />
                   </svg>
@@ -87,19 +88,19 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
           </div>
 
           <div className="mt-10 flex flex-col gap-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex space-x-4 pt-6 border-t border-gray-100">
               <button 
                 onClick={onAddToQuote}
-                disabled={isQuoted}
-                className={`h-14 rounded-xl flex items-center justify-center font-black text-[9px] uppercase tracking-[0.1em] transition-all shadow-lg ${isQuoted ? 'bg-gray-100 text-gray-400 cursor-default' : 'bg-black text-white hover:bg-blue-600'}`}
+                className={`flex-grow py-4 text-[10px] font-black uppercase tracking-widest transition-all rounded-xl border ${isQuoted ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-dark text-dark hover:bg-dark hover:text-white'}`}
               >
-                {isQuoted ? 'SELECCIONADA' : 'AÑADIR A LISTA'}
+                {isQuoted ? 'Añadido a lista' : 'Agregar a cotización'}
               </button>
+              
               <button 
                 onClick={handleDirectWhatsApp}
-                className="h-14 rounded-xl flex items-center justify-center font-black text-[9px] uppercase tracking-[0.1em] transition-all bg-[#25D366] text-white hover:bg-[#128C7E] shadow-lg shadow-green-500/20"
+                className="px-8 bg-[#25D366] text-white rounded-xl shadow-lg hover:bg-[#128C7E] transition-all flex items-center justify-center"
               >
-                COTIZAR WHATSAPP
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.891 11.891-11.891 3.181 0 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.481 8.403 0 6.556-5.332 11.891-11.891 11.891-2.01 0-3.987-.512-5.741-1.488l-6.252 1.639zm6.059-4.145c1.616.96 3.104 1.458 4.717 1.458 5.464 0 9.909-4.444 9.909-9.909 0-2.639-1.027-5.122-2.892-6.988-1.866-1.865-4.35-2.891-6.99-2.891-5.465 0-9.91 4.444-9.91 9.91 0 1.884.526 3.633 1.523 5.17l-1.006 3.674 3.753-.984zm11.238-6.19c-.31-.156-1.833-.905-2.112-1.006-.28-.101-.484-.151-.688.156-.204.307-.79.99-.968 1.2-.178.209-.356.234-.666.078-.31-.156-1.31-.483-2.494-1.54-.922-.823-1.543-1.838-1.724-2.148-.18-.31-.02-.477.135-.632.14-.139.31-.36.466-.541.156-.181.208-.307.312-.512.103-.205.052-.385-.026-.541-.078-.156-.688-1.657-.942-2.268-.247-.597-.498-.517-.688-.527-.179-.009-.384-.01-.589-.01s-.54.077-.821.385c-.282.308-1.077 1.05-1.077 2.564s1.103 2.974 1.256 3.179c.153.205 2.17 3.313 5.257 4.646.734.317 1.307.507 1.754.65.738.234 1.41.201 1.94.122.592-.088 1.833-.75 2.09-1.474.256-.724.256-1.344.179-1.474-.076-.131-.282-.209-.592-.366z"/></svg>
               </button>
             </div>
             <button onClick={handleCopyLink} className={`h-14 rounded-xl flex items-center justify-center font-black text-[9px] uppercase tracking-[0.1em] transition-all border ${copied ? 'bg-green-500 border-green-500 text-white' : 'border-gray-100 text-gray-500 hover:border-black hover:text-black'}`}>

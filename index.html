@@ -6,11 +6,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cap Factory | Catálogo Premium</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#FF5C00', // Naranja FullDepor
+              'primary-dark': '#E65300',
+              dark: '#333333',
+              grey: {
+                DEFAULT: '#999999',
+                light: '#F8F8F8',
+                border: '#EEEEEE'
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #ffffff;
+            color: #333333;
         }
         /* Custom scrollbar for a premium feel */
         ::-webkit-scrollbar {
