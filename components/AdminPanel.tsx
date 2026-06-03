@@ -51,6 +51,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [bulkModal, setBulkModal] = useState(false);
   const [bulkCategory, setBulkCategory] = useState(CATEGORIES[0]);
+  const [zoomImg, setZoomImg] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const bulkRef = useRef<HTMLInputElement>(null);
 
@@ -239,12 +240,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
           <div className="space-y-3">
             {products.map(p => (
               <div key={p.id} className={`bg-white border rounded-xl p-4 flex items-center gap-4 transition-all ${p.activo ? 'border-grey-border' : 'border-grey-border opacity-50'}`}>
-                {/* Image */}
-                <div className="w-16 h-16 rounded-lg overflow-hidden bg-grey-light flex-shrink-0">
+                {/* Image with zoom on click */}
+                <div
+                  className="w-16 h-16 rounded-lg overflow-hidden bg-grey-light flex-shrink-0 cursor-zoom-in relative"
+                  onClick={e => { e.stopPropagation(); if (p.imagen) setZoomImg(p.imagen); }}
+                >
                   {p.imagen
-                    ? <img src={p.imagen} alt={p.nombre} className="w-full h-full object-cover" />
+                    ? <img src={p.imagen} alt={p.nombre} className="w-full h-full object-cover hover:scale-110 transition-transform duration-300" />
                     : <div className="w-full h-full flex items-center justify-center text-grey text-xs">Sin foto</div>
                   }
+                  {p.imagen && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-dark/20">
+                      <svg className="w-4 h-4 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10v4m-2-2h4" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
                 {/* Info */}
                 <div className="flex-1 min-w-0">
@@ -505,6 +516,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Zoom image preview ─────────────────────────── */}
+      {zoomImg && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6" onClick={() => setZoomImg(null)}>
+          <div className="absolute inset-0 bg-dark/80 backdrop-blur-sm" />
+          <img src={zoomImg} alt="" className="relative max-w-2xl w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl" />
+          <button onClick={() => setZoomImg(null)} className="absolute top-4 right-4 w-9 h-9 bg-white/20 hover:bg-white/40 rounded-full flex items-center justify-center transition-colors">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       )}
 
