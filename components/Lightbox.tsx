@@ -19,6 +19,15 @@ const SPEC_ICONS = [
 
 const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuoted }) => {
   const [copied, setCopied] = useState(false);
+  const [zoom, setZoom] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setZoomPos({ x, y });
+  };
 
   if (!cap) return null;
 
@@ -50,8 +59,30 @@ const Lightbox: React.FC<LightboxProps> = ({ cap, onClose, onAddToQuote, isQuote
         </button>
 
         {/* Image panel */}
-        <div className="w-full md:w-[45%] bg-grey-light flex items-center justify-center p-8 relative overflow-hidden flex-shrink-0">
-          <img src={cap.imagen} alt={cap.nombre} className="w-full max-h-[400px] md:max-h-full object-contain drop-shadow-xl" />
+        <div
+          className="w-full md:w-[45%] bg-grey-light flex items-center justify-center p-8 relative overflow-hidden flex-shrink-0 select-none"
+          onMouseEnter={() => setZoom(true)}
+          onMouseLeave={() => setZoom(false)}
+          onMouseMove={handleMouseMove}
+          style={{ cursor: zoom ? 'crosshair' : 'default' }}
+        >
+          <img
+            src={cap.imagen}
+            alt={cap.nombre}
+            className="w-full max-h-[400px] md:max-h-full object-contain drop-shadow-xl transition-transform duration-200"
+            style={zoom ? {
+              transform: 'scale(2.5)',
+              transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+            } : {}}
+          />
+          {!zoom && (
+            <div className="absolute bottom-16 right-4 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[9px] text-grey font-medium shadow-sm pointer-events-none">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10v4m-2-2h4" />
+              </svg>
+              Zoom
+            </div>
+          )}
           <div className="absolute bottom-4 left-4 flex gap-2">
             <div className="bg-white/90 backdrop-blur-sm px-3 py-2 rounded-xl shadow-sm">
               <p className="text-[8px] text-grey font-medium uppercase tracking-widest">MOQ</p>
