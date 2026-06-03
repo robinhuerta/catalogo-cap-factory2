@@ -49,6 +49,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [tagsInput, setTagsInput] = useState('');
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+  const [bulkModal, setBulkModal] = useState(false);
+  const [bulkCategory, setBulkCategory] = useState(CATEGORIES[0]);
   const fileRef = useRef<HTMLInputElement>(null);
   const bulkRef = useRef<HTMLInputElement>(null);
 
@@ -104,10 +106,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
       const { error } = await supabase.storage.from(BUCKET).upload(filename, file, { upsert: true });
       if (!error) {
         const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
-        const baseName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
         await supabase.from('products').insert([{
           ...EMPTY,
-          nombre: baseName,
+          nombre: `${bulkCategory} — modelo ${i + 1}`,
+          categoria: bulkCategory,
           imagen: data.publicUrl,
           activo: false,
           orden: i,
@@ -198,7 +200,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => bulkRef.current?.click()}
+            onClick={() => setBulkModal(true)}
             disabled={!!bulkProgress}
             className="bg-white/10 text-cream px-4 py-2 rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-white/20 transition-colors disabled:opacity-50 border border-white/20"
           >
@@ -210,7 +212,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
             accept="image/*"
             multiple
             className="hidden"
-            onChange={e => e.target.files?.length && handleBulkUpload(e.target.files)}
+            onChange={e => { if (e.target.files?.length) { handleBulkUpload(e.target.files); setBulkModal(false); } }}
           />
           <button onClick={openAdd} className="bg-primary text-cream px-4 py-2 rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-primary-dark transition-colors">
             + Nuevo producto
@@ -457,6 +459,48 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                 className="px-8 py-2.5 bg-dark text-cream rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? 'Guardando...' : editId ? 'Guardar cambios' : 'Crear producto'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Bulk category modal ────────────────────────── */}
+      {bulkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-dark/70 backdrop-blur-sm" onClick={() => setBulkModal(false)} />
+          <div className="relative bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <h2 className="font-display text-xl font-bold text-dark mb-2">Subida masiva</h2>
+            <p className="text-grey text-sm mb-6">¿A qué categoría pertenecen estas fotos?</p>
+            <div className="flex flex-wrap gap-2 mb-8">
+              {CATEGORIES.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setBulkCategory(cat)}
+                  className={`px-4 py-2 rounded-full text-[11px] font-medium tracking-wide uppercase border transition-all ${
+                    bulkCategory === cat
+                      ? 'bg-dark border-dark text-cream'
+                      : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <div className="bg-grey-light rounded-xl p-4 mb-6 text-sm text-grey">
+              <span className="font-semibold text-dark">Categoría seleccionada:</span> {bulkCategory}
+              <br />
+              <span className="text-xs">Las fotos se crearán como ocultas — las editas con nombre y precio después.</span>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setBulkModal(false)} className="flex-1 py-3 border border-grey-border rounded-full text-[11px] font-medium tracking-widest uppercase text-grey hover:border-dark hover:text-dark transition-colors">
+                Cancelar
+              </button>
+              <button
+                onClick={() => bulkRef.current?.click()}
+                className="flex-1 py-3 bg-dark text-cream rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-primary transition-colors"
+              >
+                Seleccionar fotos
               </button>
             </div>
           </div>
