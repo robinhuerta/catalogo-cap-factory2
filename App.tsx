@@ -278,7 +278,7 @@ const App: React.FC = () => {
         {/* ── PORTFOLIO ────────────────────────────────────── */}
         {viewMode === 'portfolio' && (
           <Portfolio
-            projects={dbProjects ?? CLIENT_PROJECTS}
+            projects={dbProjects && dbProjects.length > 0 ? dbProjects : CLIENT_PROJECTS}
             onHome={() => setViewMode('home')}
           />
         )}
