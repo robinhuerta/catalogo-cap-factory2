@@ -14,7 +14,8 @@ const NAV_ITEMS = [
   { id: 'catalog', label: 'Catálogo' },
   { id: 'portfolio', label: 'Proyectos' },
   { id: 'technology', label: 'Fábrica' },
-  { id: 'b2b', label: 'Pedidos grandes' }
+  { id: 'b2b', label: 'Pedidos grandes' },
+  { id: 'configurador', label: 'Personalizar', highlight: true }
 ] as const;
 
 const Header: React.FC<HeaderProps> = ({
@@ -48,20 +49,30 @@ const Header: React.FC<HeaderProps> = ({
         {/* Nav — desktop */}
         <nav className="hidden md:flex items-center gap-8">
           {NAV_ITEMS.map(item => (
-            <button
-              key={item.id}
-              onClick={() => onSetView(item.id as ViewMode)}
-              className={`text-[11px] font-medium tracking-widest uppercase transition-colors relative pb-0.5 ${
-                activeView === item.id
-                  ? 'text-dark'
-                  : 'text-grey hover:text-dark'
-              }`}
-            >
-              {item.label}
-              {activeView === item.id && (
-                <span className="absolute -bottom-0.5 left-0 w-full h-px bg-primary" />
-              )}
-            </button>
+            'highlight' in item && item.highlight ? (
+              <button
+                key={item.id}
+                onClick={() => onSetView(item.id as ViewMode)}
+                className="text-[11px] font-medium tracking-widest uppercase px-4 py-2 rounded-full bg-primary text-cream hover:bg-dark transition-colors"
+              >
+                ✦ {item.label}
+              </button>
+            ) : (
+              <button
+                key={item.id}
+                onClick={() => onSetView(item.id as ViewMode)}
+                className={`text-[11px] font-medium tracking-widest uppercase transition-colors relative pb-0.5 ${
+                  activeView === item.id
+                    ? 'text-dark'
+                    : 'text-grey hover:text-dark'
+                }`}
+              >
+                {item.label}
+                {activeView === item.id && (
+                  <span className="absolute -bottom-0.5 left-0 w-full h-px bg-primary" />
+                )}
+              </button>
+            )
           ))}
         </nav>
 
@@ -143,11 +154,9 @@ const Header: React.FC<HeaderProps> = ({
             <button
               key={item.id}
               onClick={() => { onSetView(item.id as ViewMode); setMobileMenuOpen(false); }}
-              className={`text-left py-3 text-[12px] font-medium tracking-widest uppercase border-b border-grey-border last:border-0 transition-colors ${
-                activeView === item.id ? 'text-primary' : 'text-grey hover:text-dark'
-              }`}
+              className={`text-left py-3 text-[12px] font-medium tracking-widest uppercase border-b border-grey-border last:border-0 transition-colors ${'highlight' in item && item.highlight ? 'text-primary' : activeView === item.id ? 'text-primary' : 'text-grey hover:text-dark'}`}
             >
-              {item.label}
+              {'highlight' in item && item.highlight ? `✦ ${item.label}` : item.label}
             </button>
           ))}
         </div>
