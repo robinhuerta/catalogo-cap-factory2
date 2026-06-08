@@ -1,20 +1,20 @@
 import React, { useState, useRef } from 'react';
 
 const CAP_COLORS = [
-  { name: 'Negro',      hex: '#1a1a1a' },
-  { name: 'Blanco',     hex: '#ffffff' },
-  { name: 'Rojo',       hex: '#c0392b' },
-  { name: 'Azul Navy',  hex: '#1a2744' },
-  { name: 'Verde',      hex: '#1e6b3c' },
-  { name: 'Gris',       hex: '#6b7280' },
-  { name: 'Amarillo',   hex: '#f59e0b' },
-  { name: 'Celeste',    hex: '#3b82f6' },
-  { name: 'Bordo',      hex: '#7b1c2e' },
-  { name: 'Naranja',    hex: '#ea580c' },
-  { name: 'Rosado',     hex: '#ec4899' },
-  { name: 'Beige',      hex: '#d4b896' },
-  { name: 'Morado',     hex: '#7c3aed' },
-  { name: 'Terracota',  hex: '#c2623f' },
+  { name: 'Negro',      hex: '#1a1a1a',  img: '/gorras/gorra-negro.png' },
+  { name: 'Blanco',     hex: '#ffffff',  img: '/gorras/gorra-blanco.png' },
+  { name: 'Rojo',       hex: '#c0392b',  img: '/gorras/gorra-rojo.png' },
+  { name: 'Azul Navy',  hex: '#1a2744',  img: '/gorras/gorra-azul-navy.png' },
+  { name: 'Verde',      hex: '#1e6b3c',  img: '/gorras/gorra-verde.png' },
+  { name: 'Gris',       hex: '#6b7280',  img: '/gorras/gorra-gris.png' },
+  { name: 'Amarillo',   hex: '#f59e0b',  img: '/gorras/gorra-amarillo.png' },
+  { name: 'Celeste',    hex: '#3b82f6',  img: '/gorras/gorra-celeste.png' },
+  { name: 'Bordo',      hex: '#7b1c2e',  img: '/gorras/gorra-bordo.png' },
+  { name: 'Naranja',    hex: '#ea580c',  img: '/gorras/gorra-naranja.png' },
+  { name: 'Rosado',     hex: '#ec4899',  img: '/gorras/gorra-rosado.png' },
+  { name: 'Beige',      hex: '#d4b896',  img: '/gorras/gorra-beige.png' },
+  { name: 'Morado',     hex: '#7c3aed',  img: '/gorras/gorra-morado.png' },
+  { name: 'Terracota',  hex: '#c2623f',  img: '/gorras/gorra-terracota.png' },
 ];
 
 const EMBROIDERY_COLORS = [
@@ -33,6 +33,7 @@ const EMBROIDERY_COLORS = [
 const CapSimulator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [capColor, setCapColor] = useState('#1a1a1a');
   const [capColorName, setCapColorName] = useState('Negro');
+  const [capImg, setCapImg] = useState('/gorras/gorra-negro.png');
   const [embColor, setEmbColor] = useState('#ffffff');
   const [embColorName, setEmbColorName] = useState('Blanco');
   const [logo, setLogo] = useState<string | null>(null);
@@ -83,21 +84,11 @@ const CapSimulator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               {/* Gorra base */}
               <div className="relative" style={{ width: 420, height: 340 }}>
 
-                {/* Capa de color — multiply sobre la gorra blanca */}
-                <div
-                  className="absolute inset-0 rounded-xl"
-                  style={{
-                    backgroundColor: capColor,
-                    mixBlendMode: 'multiply',
-                    zIndex: 1,
-                  }}
-                />
-
-                {/* Imagen de la gorra */}
+                {/* Imagen renderizada de la gorra en el color elegido */}
                 <img
-                  src="/gorra-base.png"
+                  src={capImg}
                   alt="Gorra"
-                  className="absolute inset-0 w-full h-full object-contain"
+                  className="absolute inset-0 w-full h-full object-contain transition-opacity duration-300"
                   style={{ zIndex: 2 }}
                   draggable={false}
                 />
@@ -159,7 +150,7 @@ const CapSimulator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 {CAP_COLORS.map(c => (
                   <button
                     key={c.hex}
-                    onClick={() => { setCapColor(c.hex); setCapColorName(c.name); }}
+                    onClick={() => { setCapColor(c.hex); setCapColorName(c.name); setCapImg(c.img); }}
                     title={c.name}
                     className={`w-9 h-9 rounded-full transition-all hover:scale-110 ${
                       capColor === c.hex
