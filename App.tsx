@@ -6,6 +6,7 @@ import Lightbox from './components/Lightbox';
 import QuoteDrawer from './components/QuoteDrawer';
 import AdminPanel from './components/AdminPanel';
 import PriceCalculator from './components/PriceCalculator';
+import CapConfigurator from './components/CapConfigurator';
 import Portfolio from './components/Portfolio';
 import { CAPS_DATA, CLIENT_PROJECTS, TECH_INNOVATIONS, GLOBAL_CONFIG } from './constants';
 import { CapProduct, Category, QuoteItem, ViewMode } from './types';
@@ -63,6 +64,7 @@ const App: React.FC = () => {
   const isAdmin = window.location.pathname === '/admin';
 
   const [viewMode, setViewMode] = useState<ViewMode>('home');
+  // configurador view handled separately
   const [activeCategory, setActiveCategory] = useState<Category>('Todas');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCap, setSelectedCap] = useState<CapProduct | null>(null);
@@ -273,6 +275,11 @@ const App: React.FC = () => {
               )}
             </div>
           </div>
+        )}
+
+        {/* ── CONFIGURADOR 3D ──────────────────────────────── */}
+        {viewMode === 'configurador' && (
+          <CapConfigurator onBack={() => setViewMode('home')} />
         )}
 
         {/* ── PORTFOLIO ────────────────────────────────────── */}
