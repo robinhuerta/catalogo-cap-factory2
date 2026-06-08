@@ -7,6 +7,7 @@ import QuoteDrawer from './components/QuoteDrawer';
 import AdminPanel from './components/AdminPanel';
 import PriceCalculator from './components/PriceCalculator';
 import CapConfigurator from './components/CapConfigurator';
+import CapSimulator from './components/CapSimulator';
 import Portfolio from './components/Portfolio';
 import { CAPS_DATA, CLIENT_PROJECTS, TECH_INNOVATIONS, GLOBAL_CONFIG } from './constants';
 import { CapProduct, Category, QuoteItem, ViewMode } from './types';
@@ -279,7 +280,7 @@ const App: React.FC = () => {
 
         {/* ── CONFIGURADOR 3D ──────────────────────────────── */}
         {viewMode === 'configurador' && (
-          <CapConfigurator onBack={() => setViewMode('home')} />
+          <CapSimulator onBack={() => setViewMode('home')} />
         )}
 
         {/* ── PORTFOLIO ────────────────────────────────────── */}
