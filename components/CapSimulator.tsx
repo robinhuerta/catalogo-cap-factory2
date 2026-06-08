@@ -56,7 +56,7 @@ const CapSimulator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       `${logo ? '✅ Logo adjunto\n' : ''}` +
       `\n¿Me pueden cotizar?`
     );
-    window.open(`https://wa.me/51999999999?text=${msg}`, '_blank');
+    window.open(`https://wa.me/51930404573?text=${msg}`, '_blank');
   };
 
   return (
