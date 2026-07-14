@@ -43,7 +43,7 @@ export interface TechInnovation {
 }
 
 export type Category = string;
-export type ViewMode = 'home' | 'catalog' | 'portfolio' | 'technology' | 'b2b';
+export type ViewMode = 'home' | 'catalog' | 'portfolio' | 'technology' | 'b2b' | 'configurador';
 
 export interface QuoteItem extends CapProduct {
   timestamp: number;
