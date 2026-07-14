@@ -124,7 +124,80 @@ export const CAPS_DATA: CapProduct[] = [
   }
 ];
 
-export const CLIENT_PROJECTS: ClientProject[] = [];
+export const CLIENT_PROJECTS: ClientProject[] = [
+  {
+    id: "CP1",
+    cliente: "Sabor Norteño",
+    imagen: "https://images.unsplash.com/photo-1588453251771-cd919b362ed4?auto=format&fit=crop&q=80&w=800",
+    industria: "Restaurantes",
+    tecnica: "Bordado 3D + etiqueta interna",
+    cantidad: 500,
+    detalles: "Gorras de uniforme para todo el personal de tienda a nivel nacional.",
+  },
+  {
+    id: "CP2",
+    cliente: "Liga Deportiva Metropolitana",
+    imagen: "https://images.unsplash.com/photo-1598128558393-70ff21433be0?auto=format&fit=crop&q=80&w=800",
+    industria: "Deportes",
+    tecnica: "Bordado plano + sublimación visera",
+    cantidad: 300,
+    detalles: "Colección para equipos de fútbol y básquet del torneo interuniversitario.",
+  },
+  {
+    id: "CP3",
+    cliente: "Banco Andino",
+    imagen: "https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&q=80&w=800",
+    industria: "Corporativo",
+    tecnica: "Bordado 3D + parche de cuero",
+    cantidad: 1200,
+    detalles: "Merchandising corporativo para campaña de fidelización de clientes premium.",
+  },
+  {
+    id: "CP4",
+    cliente: "Festival Raíces",
+    imagen: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=800",
+    industria: "Eventos",
+    tecnica: "Estampado cesgo + placa metálica",
+    cantidad: 800,
+    detalles: "Gorras oficiales de edición limitada para el festival de música en la selva.",
+  },
+  {
+    id: "CP5",
+    cliente: "Tiendas Horizonte",
+    imagen: "https://images.unsplash.com/photo-1556306535-0f09a537f0a3?auto=format&fit=crop&q=80&w=800",
+    industria: "Retail",
+    tecnica: "Bordado 3D + etiqueta + cesgo",
+    cantidad: 2000,
+    detalles: "Colección cápsula para temporada verano, distribuida en todas las tiendas del país.",
+  },
+  {
+    id: "CP6",
+    cliente: "Trattoria Bellavista",
+    imagen: "https://images.unsplash.com/photo-1565299507177-b0ac66763828?auto=format&fit=crop&q=80&w=800",
+    industria: "Restaurantes",
+    tecnica: "Bordado plano + etiqueta personalizada",
+    cantidad: 200,
+    detalles: "Gorras de chef y atención al cliente para cadena de restaurantes.",
+  },
+  {
+    id: "CP7",
+    cliente: "Club Náutico del Sur",
+    imagen: "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?auto=format&fit=crop&q=80&w=800",
+    industria: "Deportes",
+    tecnica: "Bordado 3D + PVC lateral",
+    cantidad: 600,
+    detalles: "Colección deportiva para socios del club, incluyendo línea de natación y remo.",
+  },
+  {
+    id: "CP8",
+    cliente: "Summit Emprende Perú",
+    imagen: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&q=80&w=800",
+    industria: "Eventos",
+    tecnica: "Bordado plano + parche woven",
+    cantidad: 400,
+    detalles: "Kit de bienvenida para los 400 asistentes del evento tech más grande del año.",
+  },
+];
 
 export const TECH_INNOVATIONS: TechInnovation[] = [
   {

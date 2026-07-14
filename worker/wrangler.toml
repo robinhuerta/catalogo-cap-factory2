@@ -1,0 +1,12 @@
+name = "capfactory-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "capfactory-catalog"
+database_id = "fe23c6af-c585-4f34-991c-29d7cb719df4"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "capfactory-images"

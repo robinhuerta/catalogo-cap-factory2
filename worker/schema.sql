@@ -1,0 +1,35 @@
+CREATE TABLE IF NOT EXISTS products (
+  id TEXT PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  categoria TEXT NOT NULL,
+  imagen TEXT NOT NULL DEFAULT '',
+  imagenes TEXT NOT NULL DEFAULT '[]',
+  descripcion TEXT NOT NULL DEFAULT '',
+  moq INTEGER NOT NULL DEFAULT 50,
+  entrega TEXT NOT NULL DEFAULT '',
+  precio TEXT NOT NULL DEFAULT '',
+  precio_antes TEXT NOT NULL DEFAULT '',
+  tags TEXT NOT NULL DEFAULT '[]',
+  tela TEXT NOT NULL DEFAULT '',
+  bordado TEXT NOT NULL DEFAULT '',
+  visera TEXT NOT NULL DEFAULT '',
+  broche TEXT NOT NULL DEFAULT '',
+  acabados TEXT NOT NULL DEFAULT '',
+  activo INTEGER NOT NULL DEFAULT 1,
+  orden INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS projects (
+  id TEXT PRIMARY KEY,
+  cliente TEXT NOT NULL,
+  imagen TEXT NOT NULL DEFAULT '',
+  industria TEXT NOT NULL DEFAULT '',
+  tecnica TEXT NOT NULL DEFAULT '',
+  cantidad INTEGER NOT NULL DEFAULT 0,
+  detalles TEXT NOT NULL DEFAULT '',
+  frase TEXT NOT NULL DEFAULT '',
+  activo INTEGER NOT NULL DEFAULT 1,
+  orden INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);

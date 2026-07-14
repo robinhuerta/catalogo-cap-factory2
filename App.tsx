@@ -9,7 +9,7 @@ import PriceCalculator from './components/PriceCalculator';
 import Portfolio from './components/Portfolio';
 import { CAPS_DATA, CLIENT_PROJECTS, TECH_INNOVATIONS, GLOBAL_CONFIG } from './constants';
 import { CapProduct, Category, QuoteItem, ViewMode } from './types';
-import { supabase, DBProduct, DBProject } from './lib/supabase';
+import { api, DBProduct, DBProject } from './lib/api';
 
 const toCapProduct = (p: DBProduct): CapProduct => ({
   id: p.id,
@@ -74,19 +74,17 @@ const App: React.FC = () => {
   const [marqueeImages, setMarqueeImages] = useState<string[]>(MARQUEE_IMAGES);
 
   useEffect(() => {
-    supabase.from('products').select('*').eq('activo', true).order('orden').order('created_at')
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          const products = (data as DBProduct[]).map(toCapProduct);
-          setDbProducts(products);
-          const imgs = products.map(p => p.imagen).filter(Boolean);
-          if (imgs.length > 0) setMarqueeImages(imgs);
-        }
-      });
-    supabase.from('projects').select('*').eq('activo', true).order('orden').order('created_at')
-      .then(({ data }) => {
-        if (data) setDbProjects(data as DBProject[]);
-      });
+    api.list('products').then((data: DBProduct[]) => {
+      if (data && data.length > 0) {
+        const products = data.map(toCapProduct);
+        setDbProducts(products);
+        const imgs = products.map(p => p.imagen).filter(Boolean);
+        if (imgs.length > 0) setMarqueeImages(imgs);
+      }
+    });
+    api.list('projects').then((data: DBProject[]) => {
+      if (data) setDbProjects(data);
+    });
   }, []);
 
   useEffect(() => {

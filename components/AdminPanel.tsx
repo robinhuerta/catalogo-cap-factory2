@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase, DBProduct, DBProject } from '../lib/supabase';
+import { api, DBProduct, DBProject } from '../lib/api';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'capfactory2025';
-const BUCKET = 'product-images';
 
 const CATEGORIES = [
   'Snapback (Plana)',
@@ -82,19 +81,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   useEffect(() => { if (auth) { load(); loadProjects(); } }, [auth]);
 
   const loadProjects = async () => {
-    const { data } = await supabase.from('projects').select('*').order('orden').order('created_at');
-    if (data) setDbProjects(data as DBProject[]);
+    const data = await api.list('projects', true, pw);
+    setDbProjects(data as DBProject[]);
   };
 
   const handleProjectImageUpload = async (file: File) => {
     setProjectUploading(true);
-    const ext = file.name.split('.').pop();
-    const filename = `proj-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(filename, file, { upsert: true });
-    if (!error) {
-      const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
-      setProjectForm(f => ({ ...f, imagen: data.publicUrl }));
-    }
+    try {
+      const url = await api.upload(file, pw);
+      setProjectForm(f => ({ ...f, imagen: url }));
+    } catch {}
     setProjectUploading(false);
   };
 
@@ -115,9 +111,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
     if (!projectForm.cliente.trim()) return;
     setProjectSaving(true);
     if (projectEditId) {
-      await supabase.from('projects').update(projectForm).eq('id', projectEditId);
+      await api.update('projects', projectEditId, projectForm, pw);
     } else {
-      await supabase.from('projects').insert([projectForm]);
+      await api.create('projects', projectForm, pw);
     }
     await loadProjects();
     setProjectModal(false);
@@ -125,13 +121,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   };
 
   const toggleProjectActive = async (p: DBProject) => {
-    await supabase.from('projects').update({ activo: !p.activo }).eq('id', p.id);
+    await api.update('projects', p.id, { activo: !p.activo }, pw);
     await loadProjects();
   };
 
   const deleteProject = async () => {
     if (!projectDeleteId) return;
-    await supabase.from('projects').delete().eq('id', projectDeleteId);
+    await api.remove('projects', projectDeleteId, pw);
     setProjectDeleteId(null);
     await loadProjects();
   };
@@ -141,8 +137,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from('products').select('*').order('orden').order('created_at');
-    if (data) setProducts(data as DBProduct[]);
+    const data = await api.list('products', true, pw);
+    setProducts(data as DBProduct[]);
     setLoading(false);
   };
 
@@ -175,16 +171,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
 
   const handleImageUpload = async (file: File) => {
     setUploading(true);
-    const ext = file.name.split('.').pop();
-    const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(filename, file, { upsert: true });
-    if (!error) {
-      const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
+    try {
+      const url = await api.upload(file, pw);
       setForm(f => {
-        if (!f.imagen) return { ...f, imagen: data.publicUrl };
-        return { ...f, imagenes: [...(f.imagenes || []), data.publicUrl] };
+        if (!f.imagen) return { ...f, imagen: url };
+        return { ...f, imagenes: [...(f.imagenes || []), url] };
       });
-    }
+    } catch {}
     setUploading(false);
   };
 
@@ -193,20 +186,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
     setBulkProgress({ done: 0, total });
     for (let i = 0; i < total; i++) {
       const file = files[i];
-      const ext = file.name.split('.').pop();
-      const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabase.storage.from(BUCKET).upload(filename, file, { upsert: true });
-      if (!error) {
-        const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
-        await supabase.from('products').insert([{
+      try {
+        const url = await api.upload(file, pw);
+        await api.create('products', {
           ...EMPTY,
           nombre: `${bulkCategory} — modelo ${i + 1}`,
           categoria: bulkCategory,
-          imagen: data.publicUrl,
+          imagen: url,
           activo: false,
           orden: i,
-        }]);
-      }
+        }, pw);
+      } catch {}
       setBulkProgress({ done: i + 1, total });
     }
     await load();
@@ -218,9 +208,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
     setSaving(true);
     const payload = { ...form, tags: tagsInput.split(',').map(t => t.trim()).filter(Boolean) };
     if (editId) {
-      await supabase.from('products').update(payload).eq('id', editId);
+      await api.update('products', editId, payload, pw);
     } else {
-      await supabase.from('products').insert([payload]);
+      await api.create('products', payload, pw);
     }
     lastForm.current = payload;
     await load();
@@ -229,13 +219,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   };
 
   const toggleActive = async (p: DBProduct) => {
-    await supabase.from('products').update({ activo: !p.activo }).eq('id', p.id);
+    await api.update('products', p.id, { activo: !p.activo }, pw);
     await load();
   };
 
   const deleteProduct = async () => {
     if (!deleteId) return;
-    await supabase.from('products').delete().eq('id', deleteId);
+    await api.remove('products', deleteId, pw);
     setDeleteId(null);
     await load();
   };
