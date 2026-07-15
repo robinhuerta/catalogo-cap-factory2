@@ -208,6 +208,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
 
   const totalUnidades = (p: DBPedido) => p.items.reduce((sum, it) => sum + (Number(it.cantidad) || 0), 0);
 
+  const changeEstado = async (pedidoId: string, estado: DBPedido['estado']) => {
+    setPedidos(ps => ps.map(p => p.id === pedidoId ? { ...p, estado } : p));
+    await api.update('pedidos', pedidoId, { estado }, pw);
+  };
+
   const toggleItemStage = async (pedidoId: string, itemIdx: number, stage: 'corte' | 'confeccion' | 'bordado') => {
     const pedido = pedidos.find(p => p.id === pedidoId);
     if (!pedido) return;
@@ -555,7 +560,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-display font-bold text-dark text-sm">{p.cliente}</p>
-                        <span className={`text-[9px] px-2 py-0.5 rounded-full uppercase tracking-widest ${ESTADO_COLORS[p.estado]}`}>{ESTADO_LABELS[p.estado]}</span>
+                        <select
+                          value={p.estado}
+                          onChange={e => changeEstado(p.id, e.target.value as DBPedido['estado'])}
+                          onClick={e => e.stopPropagation()}
+                          className={`text-[9px] pl-2 pr-1.5 py-0.5 rounded-full uppercase tracking-widest border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary ${ESTADO_COLORS[p.estado]}`}
+                        >
+                          {ESTADOS_PEDIDO.map(e => <option key={e} value={e}>{ESTADO_LABELS[e]}</option>)}
+                        </select>
                         {!p.activo && <span className="text-[9px] bg-grey-light text-grey px-2 py-0.5 rounded-full uppercase tracking-widest">Archivado</span>}
                       </div>
                       <p className="text-grey text-[11px] mt-0.5">
