@@ -122,6 +122,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const [filterEstado, setFilterEstado] = useState<string>('');
   const [pedidoBulkProgress, setPedidoBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [pedidoViewId, setPedidoViewId] = useState<string | null>(null);
+  const [pedidoPrintId, setPedidoPrintId] = useState<string | null>(null);
   const itemFileRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const pedidoBulkRef = useRef<HTMLInputElement>(null);
 
@@ -625,6 +626,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button onClick={() => setPedidoViewId(p.id)} className="px-3 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-[10px] font-medium uppercase tracking-widest transition-colors">
                         Ver diseños
+                      </button>
+                      <button onClick={() => setPedidoPrintId(p.id)} className="px-3 py-2 rounded-lg bg-dark/5 text-dark hover:bg-dark/10 text-[10px] font-medium uppercase tracking-widest transition-colors">
+                        🖨️ Ficha
                       </button>
                       <button onClick={() => archivePedido(p)} title={p.activo ? 'Archivar' : 'Reactivar'}
                         className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${p.activo ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-grey-light text-grey hover:bg-grey-border'}`}>
@@ -1387,6 +1391,109 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Ficha de producción (para imprimir / mandar al taller) ── */}
+      {pedidoPrintId && (() => {
+        const p = pedidos.find(x => x.id === pedidoPrintId);
+        if (!p) return null;
+        return (
+          <div className="print-modal-wrapper fixed inset-0 z-[200] flex items-start justify-center p-4 pt-10 overflow-y-auto">
+            <style>{`
+              @media print {
+                @page { size: A4; margin: 12mm; }
+                body * { visibility: hidden; }
+                .print-modal-wrapper { position: static !important; display: block !important; height: auto !important; overflow: visible !important; padding: 0 !important; }
+                .print-sheet, .print-sheet * { visibility: visible; }
+                .print-sheet {
+                  position: static !important; width: 100% !important; max-width: none !important;
+                  margin: 0 !important; box-shadow: none !important; border: none !important; border-radius: 0 !important;
+                }
+                .no-print { display: none !important; }
+                .lote-block { break-inside: avoid; }
+              }
+            `}</style>
+            <div className="absolute inset-0 bg-dark/70 backdrop-blur-sm no-print" onClick={() => setPedidoPrintId(null)} />
+            <div className="print-sheet relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl mb-10">
+              <div className="p-6 border-b border-grey-border flex items-center justify-between no-print sticky top-0 bg-white rounded-t-2xl z-10">
+                <h2 className="font-display text-lg font-bold text-dark">Ficha de producción</h2>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => window.print()} className="px-4 py-2 bg-primary text-cream rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-primary-dark transition-colors">
+                    🖨️ Imprimir / Guardar PDF
+                  </button>
+                  <button onClick={() => setPedidoPrintId(null)} className="w-8 h-8 rounded-full bg-grey-light hover:bg-grey-border flex items-center justify-center transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-8 print:p-0">
+                <div className="flex items-start justify-between mb-6 pb-4 border-b-2 border-dark">
+                  <div>
+                    <p className="text-[9px] text-grey uppercase tracking-widest">Cap Factory Perú</p>
+                    <h1 className="font-display text-2xl font-bold text-dark mt-0.5">{p.cliente}</h1>
+                  </div>
+                  <div className="text-right text-[11px] text-grey">
+                    {p.fecha_pedido && <p>Pedido: {p.fecha_pedido}</p>}
+                    {p.fecha_entrega && <p className="font-semibold text-dark">Entrega: {p.fecha_entrega}</p>}
+                    {p.telefono && <p>{p.telefono}</p>}
+                    <p className="mt-1">Total: <span className="font-semibold text-dark">{totalUnidades(p).toLocaleString('es-PE')} uds</span> · {p.items.length} diseños</p>
+                  </div>
+                </div>
+
+                {groupByLote(p.items).map(([loteName, entries], loteIdx, allLotes) => {
+                  const loteTotal = entries.reduce((s, { item }) => s + (Number(item.cantidad) || 0), 0);
+                  const isLast = loteIdx === allLotes.length - 1;
+                  return (
+                    <div key={loteName} className="lote-block mb-6" style={isLast ? undefined : { breakAfter: 'page' }}>
+                      <div className="flex items-baseline justify-between mb-2 bg-grey-light px-3 py-1.5 rounded-lg">
+                        <h3 className="font-display font-bold text-dark text-sm">{loteName} <span className="text-grey font-normal text-[10px]">· {p.cliente}</span></h3>
+                        <span className="text-[10px] text-grey">{entries.length} diseños · {loteTotal.toLocaleString('es-PE')} uds</span>
+                      </div>
+                      <table className="w-full text-[10px] border-collapse">
+                        <thead>
+                          <tr className="text-left text-grey border-b border-grey-border">
+                            <th className="py-1.5 pr-2 font-medium w-12">Foto</th>
+                            <th className="py-1.5 pr-2 font-medium">Diseño</th>
+                            <th className="py-1.5 pr-2 font-medium">Color</th>
+                            <th className="py-1.5 pr-2 font-medium">Tela</th>
+                            <th className="py-1.5 pr-2 font-medium">Técnica</th>
+                            <th className="py-1.5 pr-2 font-medium text-right">Cant.</th>
+                            <th className="py-1.5 font-medium">Notas</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {entries.map(({ item: it }, i) => (
+                            <tr key={i} className="border-b border-grey-border/60">
+                              <td className="py-1.5 pr-2">
+                                {it.imagen
+                                  ? <img src={it.imagen} alt="" className="w-9 h-9 object-cover rounded" />
+                                  : <div className="w-9 h-9 bg-grey-light rounded" />}
+                              </td>
+                              <td className="py-1.5 pr-2 text-dark">{it.diseno || '—'}</td>
+                              <td className="py-1.5 pr-2 text-dark">{it.color || '—'}</td>
+                              <td className="py-1.5 pr-2 text-dark">{it.tela || '—'}</td>
+                              <td className="py-1.5 pr-2 text-dark">{it.tecnica || '—'}</td>
+                              <td className="py-1.5 pr-2 text-dark text-right font-medium">{it.cantidad}</td>
+                              <td className="py-1.5 text-grey italic">{it.notas}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })}
+
+                {p.notas && (
+                  <div className="mt-6 pt-4 border-t border-grey-border">
+                    <p className="text-[9px] text-grey uppercase tracking-widest mb-1">Notas generales del pedido</p>
+                    <p className="text-[11px] text-dark whitespace-pre-wrap">{p.notas}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
