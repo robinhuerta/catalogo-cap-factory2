@@ -1103,7 +1103,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
       {pedidoModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 overflow-y-auto">
           <div className="absolute inset-0 bg-dark/70 backdrop-blur-sm" onClick={() => setPedidoModal(false)} />
-          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl mb-10">
+          <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl mb-10">
             <div className="p-6 border-b border-grey-border flex items-center justify-between">
               <h2 className="font-display text-xl font-bold text-dark">{pedidoEditId ? 'Editar pedido' : 'Nuevo pedido'}</h2>
               <button onClick={() => setPedidoModal(false)} className="w-8 h-8 rounded-full bg-grey-light hover:bg-grey-border flex items-center justify-center transition-colors">
@@ -1179,17 +1179,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                       {pedidoForm.items.length > 1 && (
                         <button onClick={() => removeItem(idx)} className="absolute top-3 right-3 w-6 h-6 rounded-full bg-grey-light hover:bg-red-500 hover:text-white flex items-center justify-center text-grey text-xs transition-colors">×</button>
                       )}
-                      <div className="flex gap-3">
+                      <div className="flex gap-4">
                         <div className="flex-shrink-0">
                           {it.imagen ? (
                             <div className="relative group/thumb">
-                              <img src={it.imagen} alt="" className="w-16 h-16 object-cover rounded-lg border border-grey-border" />
+                              <img src={it.imagen} alt="" onClick={() => setZoomImg(it.imagen)}
+                                className="w-32 h-32 object-cover rounded-lg border border-grey-border cursor-zoom-in hover:opacity-90 transition-opacity" />
                               <button onClick={() => setItem(idx, 'imagen', '')} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity">×</button>
                             </div>
                           ) : (
-                            <div onClick={() => itemFileRefs.current[idx]?.click()} className="w-16 h-16 border-2 border-dashed border-grey-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors text-grey hover:text-primary">
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
-                              <span className="text-[8px] mt-0.5">{itemUploadingIdx === idx ? '...' : 'Foto ref.'}</span>
+                            <div onClick={() => itemFileRefs.current[idx]?.click()} className="w-32 h-32 border-2 border-dashed border-grey-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors text-grey hover:text-primary">
+                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
+                              <span className="text-[9px] mt-1">{itemUploadingIdx === idx ? '...' : 'Foto ref.'}</span>
                             </div>
                           )}
                           <input ref={el => { itemFileRefs.current[idx] = el; }} type="file" accept="image/*" className="hidden"
