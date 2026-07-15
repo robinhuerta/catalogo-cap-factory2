@@ -33,9 +33,11 @@ const ESTADO_COLORS: Record<string, string> = {
 };
 
 const EMPTY_ITEM: PedidoItem = {
-  diseno: '', color: '', tela: '', cantidad: 50, tecnica: '', imagen: '', notas: '',
+  diseno: '', color: '', tela: '', cantidad: 50, tecnica: '', imagen: '', notas: '', lote: '',
   corte: false, confeccion: false, bordado: false,
 };
+
+const SIN_LOTE = 'Sin agrupar';
 
 const ETAPAS = [
   { key: 'corte' as const, label: 'Corte' },
@@ -219,6 +221,38 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
     const items = pedido.items.map((it, i) => i === itemIdx ? { ...it, [stage]: !it[stage] } : it);
     setPedidos(ps => ps.map(p => p.id === pedidoId ? { ...p, items } : p));
     await api.update('pedidos', pedidoId, { items }, pw);
+  };
+
+  const setViewItemLote = (pedidoId: string, itemIdx: number, lote: string) => {
+    setPedidos(ps => ps.map(p => p.id === pedidoId
+      ? { ...p, items: p.items.map((it, i) => i === itemIdx ? { ...it, lote } : it) }
+      : p));
+  };
+
+  const commitViewItems = async (pedidoId: string) => {
+    const pedido = pedidos.find(p => p.id === pedidoId);
+    if (!pedido) return;
+    await api.update('pedidos', pedidoId, { items: pedido.items }, pw);
+  };
+
+  const toggleLoteStage = async (pedidoId: string, loteName: string, stage: 'corte' | 'confeccion' | 'bordado') => {
+    const pedido = pedidos.find(p => p.id === pedidoId);
+    if (!pedido) return;
+    const inLote = pedido.items.filter(it => (it.lote || SIN_LOTE) === loteName);
+    const allDone = inLote.every(it => it[stage]);
+    const items = pedido.items.map(it => (it.lote || SIN_LOTE) === loteName ? { ...it, [stage]: !allDone } : it);
+    setPedidos(ps => ps.map(p => p.id === pedidoId ? { ...p, items } : p));
+    await api.update('pedidos', pedidoId, { items }, pw);
+  };
+
+  const groupByLote = (items: PedidoItem[]) => {
+    const map = new Map<string, { item: PedidoItem; idx: number }[]>();
+    items.forEach((item, idx) => {
+      const key = item.lote || SIN_LOTE;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push({ item, idx });
+    });
+    return Array.from(map.entries());
   };
 
   const loadProjects = async () => {
@@ -1219,8 +1253,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                             className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
                           <input type="number" placeholder="Cantidad" value={it.cantidad} onChange={e => setItem(idx, 'cantidad', parseInt(e.target.value) || 0)}
                             className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
-                          <input type="text" placeholder="Notas del diseño" value={it.notas} onChange={e => setItem(idx, 'notas', e.target.value)}
+                          <input type="text" placeholder="Lote (ej. Orden 001)" value={it.lote} onChange={e => setItem(idx, 'lote', e.target.value)}
                             className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                          <input type="text" placeholder="Notas del diseño" value={it.notas} onChange={e => setItem(idx, 'notas', e.target.value)}
+                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors col-span-2" />
                         </div>
                       </div>
                     </div>
@@ -1279,36 +1315,74 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
-              <div className="p-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {p.items.map((it, i) => {
-                  const doneCount = ETAPAS.filter(et => it[et.key]).length;
+              <div className="p-6">
+                {groupByLote(p.items).map(([loteName, entries]) => {
+                  const loteTotal = entries.reduce((s, { item }) => s + (Number(item.cantidad) || 0), 0);
                   return (
-                    <div key={i} className={`border rounded-xl overflow-hidden transition-all ${doneCount === ETAPAS.length ? 'border-green-300 bg-green-50/30' : 'border-grey-border'}`}>
-                      <div className="w-full aspect-square bg-grey-light cursor-zoom-in" onClick={() => it.imagen && setZoomImg(it.imagen)}>
-                        {it.imagen
-                          ? <img src={it.imagen} alt="" className="w-full h-full object-cover" />
-                          : <div className="w-full h-full flex items-center justify-center text-grey text-xs">Sin foto</div>}
-                      </div>
-                      <div className="p-3">
-                        <p className="font-medium text-dark text-xs truncate">{it.diseno || 'Sin nombre'}</p>
-                        <p className="text-grey text-[10px] mt-0.5">
-                          {it.cantidad} uds{it.color && ` · ${it.color}`}{it.tela && ` · ${it.tela}`}
-                        </p>
-                        {it.notas && <p className="text-grey/70 text-[10px] mt-1 italic line-clamp-2">{it.notas}</p>}
-                        <div className="flex flex-col gap-1 mt-2.5">
-                          {ETAPAS.map(et => (
-                            <button
-                              key={et.key}
-                              onClick={() => toggleItemStage(p.id, i, et.key)}
-                              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-medium transition-colors ${it[et.key] ? 'bg-green-500 text-white' : 'bg-grey-light text-grey hover:bg-grey-border'}`}
-                            >
-                              <span className={`w-3 h-3 rounded-full border flex items-center justify-center flex-shrink-0 ${it[et.key] ? 'border-white bg-white/20' : 'border-grey'}`}>
-                                {it[et.key] && <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                              </span>
-                              {et.label}
-                            </button>
-                          ))}
+                    <div key={loteName} className="mb-8 last:mb-0">
+                      <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-dark/10">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-display font-bold text-dark text-sm">{loteName}</h3>
+                          <span className="text-[10px] text-grey">{entries.length} diseños · {loteTotal.toLocaleString('es-PE')} uds</span>
                         </div>
+                        <div className="flex items-center gap-2">
+                          {ETAPAS.map(et => {
+                            const done = entries.filter(({ item }) => item[et.key]).length;
+                            const allDone = done === entries.length;
+                            return (
+                              <button
+                                key={et.key}
+                                onClick={() => toggleLoteStage(p.id, loteName, et.key)}
+                                className={`px-2.5 py-1 rounded-lg text-[9px] font-medium uppercase tracking-widest transition-colors ${allDone ? 'bg-green-500 text-white' : 'bg-grey-light text-grey hover:bg-grey-border'}`}
+                              >
+                                {et.label} {done}/{entries.length}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {entries.map(({ item: it, idx: i }) => {
+                          const doneCount = ETAPAS.filter(et => it[et.key]).length;
+                          return (
+                            <div key={i} className={`border rounded-xl overflow-hidden transition-all ${doneCount === ETAPAS.length ? 'border-green-300 bg-green-50/30' : 'border-grey-border'}`}>
+                              <div className="w-full aspect-square bg-grey-light cursor-zoom-in" onClick={() => it.imagen && setZoomImg(it.imagen)}>
+                                {it.imagen
+                                  ? <img src={it.imagen} alt="" className="w-full h-full object-cover" />
+                                  : <div className="w-full h-full flex items-center justify-center text-grey text-xs">Sin foto</div>}
+                              </div>
+                              <div className="p-3">
+                                <p className="font-medium text-dark text-xs truncate">{it.diseno || 'Sin nombre'}</p>
+                                <p className="text-grey text-[10px] mt-0.5">
+                                  {it.cantidad} uds{it.color && ` · ${it.color}`}{it.tela && ` · ${it.tela}`}
+                                </p>
+                                {it.notas && <p className="text-grey/70 text-[10px] mt-1 italic line-clamp-2">{it.notas}</p>}
+                                <input
+                                  type="text"
+                                  placeholder="Lote (ej. Orden 001)"
+                                  defaultValue={it.lote}
+                                  onChange={e => setViewItemLote(p.id, i, e.target.value)}
+                                  onBlur={() => commitViewItems(p.id)}
+                                  className="mt-2 w-full border border-grey-border rounded-lg px-2 py-1 text-[10px] text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors"
+                                />
+                                <div className="flex flex-col gap-1 mt-2">
+                                  {ETAPAS.map(et => (
+                                    <button
+                                      key={et.key}
+                                      onClick={() => toggleItemStage(p.id, i, et.key)}
+                                      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-medium transition-colors ${it[et.key] ? 'bg-green-500 text-white' : 'bg-grey-light text-grey hover:bg-grey-border'}`}
+                                    >
+                                      <span className={`w-3 h-3 rounded-full border flex items-center justify-center flex-shrink-0 ${it[et.key] ? 'border-white bg-white/20' : 'border-grey'}`}>
+                                        {it[et.key] && <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                                      </span>
+                                      {et.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );

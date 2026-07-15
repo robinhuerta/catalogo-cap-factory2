@@ -44,6 +44,7 @@ export interface PedidoItem {
   tecnica: string;
   imagen: string;
   notas: string;
+  lote: string;
   corte: boolean;
   confeccion: boolean;
   bordado: boolean;
