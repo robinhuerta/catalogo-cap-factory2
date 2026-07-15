@@ -32,7 +32,16 @@ const ESTADO_COLORS: Record<string, string> = {
   cancelado: 'bg-red-50 text-red-500',
 };
 
-const EMPTY_ITEM: PedidoItem = { diseno: '', color: '', tela: '', cantidad: 50, tecnica: '', imagen: '', notas: '' };
+const EMPTY_ITEM: PedidoItem = {
+  diseno: '', color: '', tela: '', cantidad: 50, tecnica: '', imagen: '', notas: '',
+  corte: false, confeccion: false, bordado: false,
+};
+
+const ETAPAS = [
+  { key: 'corte' as const, label: 'Corte' },
+  { key: 'confeccion' as const, label: 'Confección' },
+  { key: 'bordado' as const, label: 'Bordado' },
+];
 
 const EMPTY_PEDIDO: Omit<DBPedido, 'id' | 'created_at'> = {
   cliente: '', telefono: '',
@@ -110,6 +119,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const [itemUploadingIdx, setItemUploadingIdx] = useState<number | null>(null);
   const [filterEstado, setFilterEstado] = useState<string>('');
   const [pedidoBulkProgress, setPedidoBulkProgress] = useState<{ done: number; total: number } | null>(null);
+  const [pedidoViewId, setPedidoViewId] = useState<string | null>(null);
   const itemFileRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const pedidoBulkRef = useRef<HTMLInputElement>(null);
 
@@ -197,6 +207,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   };
 
   const totalUnidades = (p: DBPedido) => p.items.reduce((sum, it) => sum + (Number(it.cantidad) || 0), 0);
+
+  const toggleItemStage = async (pedidoId: string, itemIdx: number, stage: 'corte' | 'confeccion' | 'bordado') => {
+    const pedido = pedidos.find(p => p.id === pedidoId);
+    if (!pedido) return;
+    const items = pedido.items.map((it, i) => i === itemIdx ? { ...it, [stage]: !it[stage] } : it);
+    setPedidos(ps => ps.map(p => p.id === pedidoId ? { ...p, items } : p));
+    await api.update('pedidos', pedidoId, { items }, pw);
+  };
 
   const loadProjects = async () => {
     const data = await api.list('projects', true, pw);
@@ -545,8 +563,23 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                         {p.fecha_entrega && ` · Entrega: ${p.fecha_entrega}`}
                         {p.telefono && ` · ${p.telefono}`}
                       </p>
+                      {p.items.length > 0 && (
+                        <div className="flex items-center gap-3 mt-1.5">
+                          {ETAPAS.map(et => {
+                            const done = p.items.filter(it => it[et.key]).length;
+                            return (
+                              <span key={et.key} className="text-[9px] text-grey">
+                                {et.label}: <span className={done === p.items.length ? 'text-green-600 font-medium' : 'text-dark font-medium'}>{done}/{p.items.length}</span>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => setPedidoViewId(p.id)} className="px-3 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-[10px] font-medium uppercase tracking-widest transition-colors">
+                        Ver diseños
+                      </button>
                       <button onClick={() => archivePedido(p)} title={p.activo ? 'Archivar' : 'Reactivar'}
                         className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${p.activo ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-grey-light text-grey hover:bg-grey-border'}`}>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1215,6 +1248,63 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
           </div>
         </div>
       )}
+
+      {/* ── Pedido catalog view (marcar etapas) ──────────── */}
+      {pedidoViewId && (() => {
+        const p = pedidos.find(x => x.id === pedidoViewId);
+        if (!p) return null;
+        return (
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 overflow-y-auto">
+            <div className="absolute inset-0 bg-dark/70 backdrop-blur-sm" onClick={() => setPedidoViewId(null)} />
+            <div className="relative w-full max-w-6xl bg-white rounded-2xl shadow-2xl mb-10">
+              <div className="p-6 border-b border-grey-border flex items-center justify-between sticky top-0 bg-white rounded-t-2xl z-10">
+                <div>
+                  <h2 className="font-display text-xl font-bold text-dark">{p.cliente}</h2>
+                  <p className="text-grey text-[11px] mt-0.5">{p.items.length} diseños · {totalUnidades(p).toLocaleString('es-PE')} uds</p>
+                </div>
+                <button onClick={() => setPedidoViewId(null)} className="w-8 h-8 rounded-full bg-grey-light hover:bg-grey-border flex items-center justify-center transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <div className="p-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {p.items.map((it, i) => {
+                  const doneCount = ETAPAS.filter(et => it[et.key]).length;
+                  return (
+                    <div key={i} className={`border rounded-xl overflow-hidden transition-all ${doneCount === ETAPAS.length ? 'border-green-300 bg-green-50/30' : 'border-grey-border'}`}>
+                      <div className="w-full aspect-square bg-grey-light cursor-zoom-in" onClick={() => it.imagen && setZoomImg(it.imagen)}>
+                        {it.imagen
+                          ? <img src={it.imagen} alt="" className="w-full h-full object-cover" />
+                          : <div className="w-full h-full flex items-center justify-center text-grey text-xs">Sin foto</div>}
+                      </div>
+                      <div className="p-3">
+                        <p className="font-medium text-dark text-xs truncate">{it.diseno || 'Sin nombre'}</p>
+                        <p className="text-grey text-[10px] mt-0.5">
+                          {it.cantidad} uds{it.color && ` · ${it.color}`}{it.tela && ` · ${it.tela}`}
+                        </p>
+                        {it.notas && <p className="text-grey/70 text-[10px] mt-1 italic line-clamp-2">{it.notas}</p>}
+                        <div className="flex flex-col gap-1 mt-2.5">
+                          {ETAPAS.map(et => (
+                            <button
+                              key={et.key}
+                              onClick={() => toggleItemStage(p.id, i, et.key)}
+                              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-medium transition-colors ${it[et.key] ? 'bg-green-500 text-white' : 'bg-grey-light text-grey hover:bg-grey-border'}`}
+                            >
+                              <span className={`w-3 h-3 rounded-full border flex items-center justify-center flex-shrink-0 ${it[et.key] ? 'border-white bg-white/20' : 'border-grey'}`}>
+                                {it[et.key] && <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                              </span>
+                              {et.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Zoom image preview ─────────────────────────── */}
       {zoomImg && (

@@ -44,6 +44,9 @@ export interface PedidoItem {
   tecnica: string;
   imagen: string;
   notas: string;
+  corte: boolean;
+  confeccion: boolean;
+  bordado: boolean;
 }
 
 export interface DBPedido {
