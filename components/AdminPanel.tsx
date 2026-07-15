@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { api, DBProduct, DBProject } from '../lib/api';
+import { api, DBProduct, DBProject, DBPedido, PedidoItem } from '../lib/api';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'capfactory2025';
 
@@ -17,6 +17,28 @@ const INDUSTRIES = ['Restaurantes', 'Deportes', 'Corporativo', 'Eventos', 'Retai
 const EMPTY_PROJECT: Omit<DBProject, 'id' | 'created_at'> = {
   cliente: '', imagen: '', industria: 'Corporativo',
   tecnica: '', cantidad: 100, detalles: '', frase: '',
+  activo: true, orden: 0,
+};
+
+const ESTADOS_PEDIDO = ['nuevo', 'produccion', 'listo', 'entregado', 'cancelado'] as const;
+const ESTADO_LABELS: Record<string, string> = {
+  nuevo: 'Nuevo', produccion: 'En producción', listo: 'Listo', entregado: 'Entregado', cancelado: 'Cancelado',
+};
+const ESTADO_COLORS: Record<string, string> = {
+  nuevo: 'bg-blue-50 text-blue-600',
+  produccion: 'bg-amber-50 text-amber-600',
+  listo: 'bg-green-50 text-green-600',
+  entregado: 'bg-grey-light text-grey',
+  cancelado: 'bg-red-50 text-red-500',
+};
+
+const EMPTY_ITEM: PedidoItem = { diseno: '', color: '', tela: '', cantidad: 50, tecnica: '', imagen: '', notas: '' };
+
+const EMPTY_PEDIDO: Omit<DBPedido, 'id' | 'created_at'> = {
+  cliente: '', telefono: '',
+  fecha_pedido: new Date().toISOString().slice(0, 10),
+  fecha_entrega: '', estado: 'nuevo', notas: '',
+  items: [{ ...EMPTY_ITEM }],
   activo: true, orden: 0,
 };
 
@@ -68,7 +90,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const bulkRef = useRef<HTMLInputElement>(null);
 
   // ── Projects state ───────────────────────────────────
-  const [adminTab, setAdminTab] = useState<'products' | 'projects'>('products');
+  const [adminTab, setAdminTab] = useState<'products' | 'projects' | 'pedidos'>('products');
   const [dbProjects, setDbProjects] = useState<DBProject[]>([]);
   const [projectModal, setProjectModal] = useState(false);
   const [projectForm, setProjectForm] = useState<Omit<DBProject, 'id' | 'created_at'>>(EMPTY_PROJECT);
@@ -78,7 +100,83 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const [projectDeleteId, setProjectDeleteId] = useState<string | null>(null);
   const projectFileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (auth) { load(); loadProjects(); } }, [auth]);
+  // ── Pedidos state (privado) ──────────────────────────
+  const [pedidos, setPedidos] = useState<DBPedido[]>([]);
+  const [pedidoModal, setPedidoModal] = useState(false);
+  const [pedidoForm, setPedidoForm] = useState<Omit<DBPedido, 'id' | 'created_at'>>(EMPTY_PEDIDO);
+  const [pedidoEditId, setPedidoEditId] = useState<string | null>(null);
+  const [pedidoSaving, setPedidoSaving] = useState(false);
+  const [pedidoDeleteId, setPedidoDeleteId] = useState<string | null>(null);
+  const [itemUploadingIdx, setItemUploadingIdx] = useState<number | null>(null);
+  const [filterEstado, setFilterEstado] = useState<string>('');
+  const itemFileRefs = useRef<Record<number, HTMLInputElement | null>>({});
+
+  useEffect(() => { if (auth) { load(); loadProjects(); loadPedidos(); } }, [auth]);
+
+  const loadPedidos = async () => {
+    const data = await api.list('pedidos', true, pw);
+    setPedidos(data as DBPedido[]);
+  };
+
+  const openAddPedido = () => {
+    setPedidoForm({ ...EMPTY_PEDIDO, fecha_pedido: new Date().toISOString().slice(0, 10), items: [{ ...EMPTY_ITEM }] });
+    setPedidoEditId(null);
+    setPedidoModal(true);
+  };
+
+  const openEditPedido = (p: DBPedido) => {
+    const { id, created_at, ...rest } = p;
+    setPedidoForm({ ...rest, items: rest.items.length ? rest.items : [{ ...EMPTY_ITEM }] });
+    setPedidoEditId(id);
+    setPedidoModal(true);
+  };
+
+  const pdField = (key: keyof typeof pedidoForm, value: unknown) =>
+    setPedidoForm(f => ({ ...f, [key]: value }));
+
+  const setItem = (idx: number, key: keyof PedidoItem, value: string | number) =>
+    setPedidoForm(f => ({ ...f, items: f.items.map((it, i) => i === idx ? { ...it, [key]: value } : it) }));
+
+  const addItem = () => setPedidoForm(f => ({ ...f, items: [...f.items, { ...EMPTY_ITEM }] }));
+
+  const removeItem = (idx: number) =>
+    setPedidoForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
+
+  const uploadItemImage = async (idx: number, file: File) => {
+    setItemUploadingIdx(idx);
+    try {
+      const url = await api.upload(file, pw);
+      setItem(idx, 'imagen', url);
+    } catch {}
+    setItemUploadingIdx(null);
+  };
+
+  const savePedido = async () => {
+    if (!pedidoForm.cliente.trim()) return;
+    setPedidoSaving(true);
+    if (pedidoEditId) {
+      await api.update('pedidos', pedidoEditId, pedidoForm, pw);
+    } else {
+      await api.create('pedidos', pedidoForm, pw);
+    }
+    await loadPedidos();
+    setPedidoModal(false);
+    setPedidoSaving(false);
+  };
+
+  const archivePedido = async (p: DBPedido) => {
+    await api.update('pedidos', p.id, { activo: !p.activo }, pw);
+    await loadPedidos();
+  };
+
+  const deletePedido = async () => {
+    if (!pedidoDeleteId) return;
+    await api.remove('pedidos', pedidoDeleteId, pw);
+    setPedidoDeleteId(null);
+    await loadPedidos();
+  };
+
+  const totalUnidades = (p: DBPedido) => p.items.reduce((sum, it) => sum + (Number(it.cantidad) || 0), 0);
 
   const loadProjects = async () => {
     const data = await api.list('projects', true, pw);
@@ -293,6 +391,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
             >
               Proyectos
             </button>
+            <button
+              onClick={() => setAdminTab('pedidos')}
+              className={`px-4 py-1.5 rounded-full text-[11px] font-medium tracking-widest uppercase transition-colors ${adminTab === 'pedidos' ? 'bg-white text-dark' : 'text-cream/60 hover:text-cream'}`}
+            >
+              Pedidos 🔒
+            </button>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -311,9 +415,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                 + Nuevo producto
               </button>
             </>
-          ) : (
+          ) : adminTab === 'projects' ? (
             <button onClick={openAddProject} className="bg-primary text-cream px-4 py-2 rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-primary-dark transition-colors">
               + Nuevo proyecto
+            </button>
+          ) : (
+            <button onClick={openAddPedido} className="bg-primary text-cream px-4 py-2 rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-primary-dark transition-colors">
+              + Nuevo pedido
             </button>
           )}
           <button onClick={onExit} className="text-grey hover:text-cream text-[11px] transition-colors px-3 py-2">Ver catálogo</button>
@@ -364,6 +472,93 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                       </svg>
                     </button>
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Pedidos list (privado) ──────────────────────── */}
+      {adminTab === 'pedidos' && (
+        <div className="max-w-5xl mx-auto px-6 py-10">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6 text-[11px] text-amber-700">
+            🔒 Esta sección es privada — no aparece en el catálogo público. Úsala para trabajar los pedidos de clientes con sus fotos de referencia, tela y cantidades.
+          </div>
+          {pedidos.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              <button
+                onClick={() => setFilterEstado('')}
+                className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${filterEstado === '' ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
+              >
+                Todos
+              </button>
+              {ESTADOS_PEDIDO.map(e => (
+                <button
+                  key={e}
+                  onClick={() => setFilterEstado(e === filterEstado ? '' : e)}
+                  className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${filterEstado === e ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
+                >
+                  {ESTADO_LABELS[e]}
+                </button>
+              ))}
+            </div>
+          )}
+          {pedidos.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="font-display text-xl font-bold text-dark mb-2">Sin pedidos aún</p>
+              <p className="text-grey text-sm mb-6">Agrega tu primer pedido con el botón de arriba.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {pedidos.filter(p => !filterEstado || p.estado === filterEstado).map(p => (
+                <div key={p.id} className={`bg-white border rounded-xl p-4 transition-all ${p.activo ? 'border-grey-border' : 'border-grey-border opacity-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-display font-bold text-dark text-sm">{p.cliente}</p>
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full uppercase tracking-widest ${ESTADO_COLORS[p.estado]}`}>{ESTADO_LABELS[p.estado]}</span>
+                        {!p.activo && <span className="text-[9px] bg-grey-light text-grey px-2 py-0.5 rounded-full uppercase tracking-widest">Archivado</span>}
+                      </div>
+                      <p className="text-grey text-[11px] mt-0.5">
+                        {p.items.length} diseño{p.items.length !== 1 ? 's' : ''} · {totalUnidades(p).toLocaleString('es-PE')} uds
+                        {p.fecha_entrega && ` · Entrega: ${p.fecha_entrega}`}
+                        {p.telefono && ` · ${p.telefono}`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => archivePedido(p)} title={p.activo ? 'Archivar' : 'Reactivar'}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${p.activo ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-grey-light text-grey hover:bg-grey-border'}`}>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={p.activo ? 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z' : 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21'} />
+                        </svg>
+                      </button>
+                      <button onClick={() => openEditPedido(p)} className="w-8 h-8 rounded-lg bg-grey-light hover:bg-dark hover:text-cream flex items-center justify-center transition-colors text-dark">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button onClick={() => setPedidoDeleteId(p.id)} className="w-8 h-8 rounded-lg bg-grey-light hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors text-grey">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  {p.items.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-grey-border">
+                      {p.items.map((it, i) => (
+                        <div key={i} className="flex items-center gap-2 bg-grey-light rounded-lg pl-1 pr-3 py-1">
+                          <div className="w-8 h-8 rounded overflow-hidden bg-white flex-shrink-0 cursor-zoom-in" onClick={() => it.imagen && setZoomImg(it.imagen)}>
+                            {it.imagen
+                              ? <img src={it.imagen} alt="" className="w-full h-full object-cover" />
+                              : <div className="w-full h-full flex items-center justify-center text-grey text-[8px]">—</div>}
+                          </div>
+                          <span className="text-[10px] text-dark">{it.diseno || 'Sin nombre'} {it.color && `· ${it.color}`} · {it.cantidad} uds</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -846,6 +1041,148 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
               >
                 Seleccionar fotos
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Pedido Modal ─────────────────────────────────── */}
+      {pedidoModal && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 overflow-y-auto">
+          <div className="absolute inset-0 bg-dark/70 backdrop-blur-sm" onClick={() => setPedidoModal(false)} />
+          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl mb-10">
+            <div className="p-6 border-b border-grey-border flex items-center justify-between">
+              <h2 className="font-display text-xl font-bold text-dark">{pedidoEditId ? 'Editar pedido' : 'Nuevo pedido'}</h2>
+              <button onClick={() => setPedidoModal(false)} className="w-8 h-8 rounded-full bg-grey-light hover:bg-grey-border flex items-center justify-center transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Cliente + Teléfono */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] text-grey font-medium uppercase tracking-widest block mb-1.5">Cliente *</label>
+                  <input type="text" placeholder="Nombre del cliente" value={pedidoForm.cliente}
+                    onChange={e => pdField('cliente', e.target.value)}
+                    className="w-full border border-grey-border rounded-lg px-3 py-2.5 text-sm text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-grey font-medium uppercase tracking-widest block mb-1.5">Teléfono / WhatsApp</label>
+                  <input type="text" placeholder="+51 9..." value={pedidoForm.telefono}
+                    onChange={e => pdField('telefono', e.target.value)}
+                    className="w-full border border-grey-border rounded-lg px-3 py-2.5 text-sm text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                </div>
+              </div>
+
+              {/* Fechas + Estado */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-[10px] text-grey font-medium uppercase tracking-widest block mb-1.5">Fecha pedido</label>
+                  <input type="date" value={pedidoForm.fecha_pedido} onChange={e => pdField('fecha_pedido', e.target.value)}
+                    className="w-full border border-grey-border rounded-lg px-3 py-2.5 text-sm text-dark focus:outline-none focus:border-primary transition-colors" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-grey font-medium uppercase tracking-widest block mb-1.5">Entrega estimada</label>
+                  <input type="date" value={pedidoForm.fecha_entrega} onChange={e => pdField('fecha_entrega', e.target.value)}
+                    className="w-full border border-grey-border rounded-lg px-3 py-2.5 text-sm text-dark focus:outline-none focus:border-primary transition-colors" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-grey font-medium uppercase tracking-widest block mb-1.5">Estado</label>
+                  <select value={pedidoForm.estado} onChange={e => pdField('estado', e.target.value)}
+                    className="w-full border border-grey-border rounded-lg px-3 py-2.5 text-sm text-dark focus:outline-none focus:border-primary transition-colors bg-white">
+                    {ESTADOS_PEDIDO.map(e => <option key={e} value={e}>{ESTADO_LABELS[e]}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Notas / resumen de WhatsApp */}
+              <div>
+                <label className="text-[10px] text-grey font-medium uppercase tracking-widest block mb-1.5">
+                  Notas <span className="text-grey/50">(pega aquí el chat exportado de WhatsApp)</span>
+                </label>
+                <textarea rows={4} placeholder="Detalles del pedido, condiciones, lo que escribió el cliente..." value={pedidoForm.notas}
+                  onChange={e => pdField('notas', e.target.value)}
+                  className="w-full border border-grey-border rounded-lg px-3 py-2.5 text-sm text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors resize-none" />
+              </div>
+
+              {/* Items / diseños */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] text-grey font-medium uppercase tracking-widest">Diseños del pedido</p>
+                  <button onClick={addItem} className="text-[10px] text-primary font-medium uppercase tracking-widest hover:text-primary-dark transition-colors">+ Agregar diseño</button>
+                </div>
+                <div className="space-y-4">
+                  {pedidoForm.items.map((it, idx) => (
+                    <div key={idx} className="border border-grey-border rounded-xl p-4 relative">
+                      {pedidoForm.items.length > 1 && (
+                        <button onClick={() => removeItem(idx)} className="absolute top-3 right-3 w-6 h-6 rounded-full bg-grey-light hover:bg-red-500 hover:text-white flex items-center justify-center text-grey text-xs transition-colors">×</button>
+                      )}
+                      <div className="flex gap-3">
+                        <div className="flex-shrink-0">
+                          {it.imagen ? (
+                            <div className="relative group/thumb">
+                              <img src={it.imagen} alt="" className="w-16 h-16 object-cover rounded-lg border border-grey-border" />
+                              <button onClick={() => setItem(idx, 'imagen', '')} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity">×</button>
+                            </div>
+                          ) : (
+                            <div onClick={() => itemFileRefs.current[idx]?.click()} className="w-16 h-16 border-2 border-dashed border-grey-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors text-grey hover:text-primary">
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
+                              <span className="text-[8px] mt-0.5">{itemUploadingIdx === idx ? '...' : 'Foto ref.'}</span>
+                            </div>
+                          )}
+                          <input ref={el => { itemFileRefs.current[idx] = el; }} type="file" accept="image/*" className="hidden"
+                            onChange={e => e.target.files?.[0] && uploadItemImage(idx, e.target.files[0])} />
+                        </div>
+                        <div className="flex-1 grid grid-cols-2 gap-2">
+                          <input type="text" placeholder="Diseño / modelo" value={it.diseno} onChange={e => setItem(idx, 'diseno', e.target.value)}
+                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                          <input type="text" placeholder="Color" value={it.color} onChange={e => setItem(idx, 'color', e.target.value)}
+                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                          <input type="text" placeholder="Tela a comprar" value={it.tela} onChange={e => setItem(idx, 'tela', e.target.value)}
+                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                          <input type="text" placeholder="Técnica (bordado, estampado...)" value={it.tecnica} onChange={e => setItem(idx, 'tecnica', e.target.value)}
+                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                          <input type="number" placeholder="Cantidad" value={it.cantidad} onChange={e => setItem(idx, 'cantidad', parseInt(e.target.value) || 0)}
+                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                          <input type="text" placeholder="Notas del diseño" value={it.notas} onChange={e => setItem(idx, 'notas', e.target.value)}
+                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-grey-border flex gap-3 justify-end">
+              <button onClick={() => setPedidoModal(false)} className="px-6 py-2.5 border border-grey-border rounded-full text-[11px] font-medium tracking-widest uppercase text-grey hover:border-dark hover:text-dark transition-colors">
+                Cancelar
+              </button>
+              <button onClick={savePedido} disabled={pedidoSaving || !pedidoForm.cliente.trim()}
+                className="px-8 py-2.5 bg-dark text-cream rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                {pedidoSaving ? 'Guardando...' : pedidoEditId ? 'Guardar cambios' : 'Crear pedido'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pedido delete confirm */}
+      {pedidoDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-dark/70 backdrop-blur-sm" onClick={() => setPedidoDeleteId(null)} />
+          <div className="relative bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+            <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="font-display text-lg font-bold text-dark mb-2">¿Eliminar pedido?</h3>
+            <p className="text-grey text-sm mb-6">Esta acción no se puede deshacer.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setPedidoDeleteId(null)} className="flex-1 py-2.5 border border-grey-border rounded-full text-[11px] font-medium tracking-widest uppercase text-grey hover:border-dark hover:text-dark transition-colors">Cancelar</button>
+              <button onClick={deletePedido} className="flex-1 py-2.5 bg-red-500 text-white rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-red-600 transition-colors">Eliminar</button>
             </div>
           </div>
         </div>

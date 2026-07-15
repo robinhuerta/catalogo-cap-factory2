@@ -36,7 +36,31 @@ export interface DBProduct {
   created_at: string;
 }
 
-type Table = 'products' | 'projects';
+export interface PedidoItem {
+  diseno: string;
+  color: string;
+  tela: string;
+  cantidad: number;
+  tecnica: string;
+  imagen: string;
+  notas: string;
+}
+
+export interface DBPedido {
+  id: string;
+  cliente: string;
+  telefono: string;
+  fecha_pedido: string;
+  fecha_entrega: string;
+  estado: 'nuevo' | 'produccion' | 'listo' | 'entregado' | 'cancelado';
+  notas: string;
+  items: PedidoItem[];
+  activo: boolean;
+  orden: number;
+  created_at: string;
+}
+
+type Table = 'products' | 'projects' | 'pedidos';
 
 async function request(path: string, options: RequestInit = {}) {
   const res = await fetch(`${API_URL}${path}`, options);
@@ -50,7 +74,7 @@ function authHeaders(password: string) {
 
 export const api = {
   list: (table: Table, all = false, password?: string) =>
-    request(`/api/${table}${all ? '?all=1' : ''}`, all ? { headers: authHeaders(password!) } : undefined),
+    request(`/api/${table}${all ? '?all=1' : ''}`, password ? { headers: authHeaders(password) } : undefined),
 
   create: <T>(table: Table, payload: T, password: string) =>
     request(`/api/${table}`, {

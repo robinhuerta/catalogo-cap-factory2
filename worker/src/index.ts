@@ -35,7 +35,14 @@ const PROJECT_COLUMNS = [
   'frase', 'activo', 'orden',
 ];
 
-const JSON_FIELDS = new Set(['imagenes', 'tags']);
+const PEDIDO_COLUMNS = [
+  'cliente', 'telefono', 'fecha_pedido', 'fecha_entrega', 'estado',
+  'notas', 'items', 'activo', 'orden',
+];
+
+const PRIVATE_TABLES = new Set(['pedidos']);
+
+const JSON_FIELDS = new Set(['imagenes', 'tags', 'items']);
 
 function rowOut(row: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = { ...row };
@@ -131,18 +138,19 @@ export default {
         return await handleUpload(req, env);
       }
 
-      if (parts[0] === 'api' && (parts[1] === 'products' || parts[1] === 'projects')) {
+      if (parts[0] === 'api' && (parts[1] === 'products' || parts[1] === 'projects' || parts[1] === 'pedidos')) {
         const table = parts[1];
-        const columns = table === 'products' ? PRODUCT_COLUMNS : PROJECT_COLUMNS;
+        const columns = table === 'products' ? PRODUCT_COLUMNS : table === 'projects' ? PROJECT_COLUMNS : PEDIDO_COLUMNS;
         const id = parts[2];
+        const isPrivate = PRIVATE_TABLES.has(table);
 
         if (req.method === 'GET' && !id) {
           const activeOnly = url.searchParams.get('all') !== '1';
-          if (activeOnly === false) {
+          if (isPrivate || !activeOnly) {
             const authErr = requireAuth(req, env);
             if (authErr) return authErr;
           }
-          return json(await listRows(env, table, activeOnly));
+          return json(await listRows(env, table, isPrivate ? false : activeOnly));
         }
 
         if (req.method === 'POST' && !id) {

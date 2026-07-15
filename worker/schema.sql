@@ -20,6 +20,20 @@ CREATE TABLE IF NOT EXISTS products (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS pedidos (
+  id TEXT PRIMARY KEY,
+  cliente TEXT NOT NULL,
+  telefono TEXT NOT NULL DEFAULT '',
+  fecha_pedido TEXT NOT NULL DEFAULT '',
+  fecha_entrega TEXT NOT NULL DEFAULT '',
+  estado TEXT NOT NULL DEFAULT 'nuevo',
+  notas TEXT NOT NULL DEFAULT '',
+  items TEXT NOT NULL DEFAULT '[]',
+  activo INTEGER NOT NULL DEFAULT 1,
+  orden INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS projects (
   id TEXT PRIMARY KEY,
   cliente TEXT NOT NULL,
