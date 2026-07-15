@@ -109,7 +109,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const [pedidoDeleteId, setPedidoDeleteId] = useState<string | null>(null);
   const [itemUploadingIdx, setItemUploadingIdx] = useState<number | null>(null);
   const [filterEstado, setFilterEstado] = useState<string>('');
+  const [pedidoBulkProgress, setPedidoBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const itemFileRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const pedidoBulkRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { if (auth) { load(); loadProjects(); loadPedidos(); } }, [auth]);
 
@@ -149,6 +151,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
       setItem(idx, 'imagen', url);
     } catch {}
     setItemUploadingIdx(null);
+  };
+
+  const uploadItemsFromFolder = async (files: FileList) => {
+    const total = files.length;
+    setPedidoBulkProgress({ done: 0, total });
+    const newItems: PedidoItem[] = [];
+    for (let i = 0; i < total; i++) {
+      try {
+        const url = await api.upload(files[i], pw);
+        newItems.push({ ...EMPTY_ITEM, diseno: files[i].name.replace(/\.[^/.]+$/, ''), imagen: url });
+      } catch {}
+      setPedidoBulkProgress({ done: i + 1, total });
+    }
+    setPedidoForm(f => {
+      const base = f.items.length === 1 && !f.items[0].imagen && !f.items[0].diseno ? [] : f.items;
+      return { ...f, items: [...base, ...newItems] };
+    });
+    setPedidoBulkProgress(null);
   };
 
   const savePedido = async () => {
@@ -1110,7 +1130,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-[10px] text-grey font-medium uppercase tracking-widest">Diseños del pedido</p>
-                  <button onClick={addItem} className="text-[10px] text-primary font-medium uppercase tracking-widest hover:text-primary-dark transition-colors">+ Agregar diseño</button>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => pedidoBulkRef.current?.click()} disabled={!!pedidoBulkProgress}
+                      className="text-[10px] text-primary font-medium uppercase tracking-widest hover:text-primary-dark transition-colors disabled:opacity-50">
+                      {pedidoBulkProgress ? `Subiendo ${pedidoBulkProgress.done}/${pedidoBulkProgress.total}...` : '↑ Subir varias fotos'}
+                    </button>
+                    <input ref={pedidoBulkRef} type="file" accept="image/*" multiple className="hidden"
+                      onChange={e => { if (e.target.files?.length) uploadItemsFromFolder(e.target.files); }} />
+                    <button onClick={addItem} className="text-[10px] text-primary font-medium uppercase tracking-widest hover:text-primary-dark transition-colors">+ Agregar diseño</button>
+                  </div>
                 </div>
                 <div className="space-y-4">
                   {pedidoForm.items.map((it, idx) => (
