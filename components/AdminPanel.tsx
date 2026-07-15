@@ -649,15 +649,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                     </div>
                   </div>
                   {p.items.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-grey-border">
+                    <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-grey-border">
                       {p.items.map((it, i) => (
-                        <div key={i} className="flex items-center gap-2 bg-grey-light rounded-lg pl-1 pr-3 py-1">
-                          <div className="w-8 h-8 rounded overflow-hidden bg-white flex-shrink-0 cursor-zoom-in" onClick={() => it.imagen && setZoomImg(it.imagen)}>
+                        <div key={i} className="flex items-center gap-3 bg-grey-light rounded-lg pl-1.5 pr-4 py-1.5">
+                          <div className="w-14 h-14 rounded-lg overflow-hidden bg-white flex-shrink-0 cursor-zoom-in" onClick={() => it.imagen && setZoomImg(it.imagen)}>
                             {it.imagen
                               ? <img src={it.imagen} alt="" className="w-full h-full object-cover" />
-                              : <div className="w-full h-full flex items-center justify-center text-grey text-[8px]">—</div>}
+                              : <div className="w-full h-full flex items-center justify-center text-grey text-[9px]">—</div>}
                           </div>
-                          <span className="text-[10px] text-dark">{it.diseno || 'Sin nombre'} {it.color && `· ${it.color}`} · {it.cantidad} uds</span>
+                          <span className="text-sm text-dark flex-1 min-w-0 truncate">{it.diseno || 'Sin nombre'} {it.color && `· ${it.color}`} · {it.cantidad} uds{it.lote && ` · ${it.lote}`}</span>
                         </div>
                       ))}
                     </div>
