@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { recolorCap } from '../lib/recolorCap';
-import capBase from '../images/gorra-snapback-negra.jpg';
+import capBase5p from '../images/gorra-snapback-negra.jpg';
+import capBase6p from '../images/gorra-6paneles-gris.jpg';
+
+const CAP_MODELS = [
+  { id: '5p', name: '5 Paneles', img: capBase5p },
+  { id: '6p', name: '6 Paneles', img: capBase6p },
+];
 
 const CAP_COLORS = [
   { name: 'Negro',      hex: '#1a1a1a' },
@@ -33,22 +39,25 @@ const EMBROIDERY_COLORS = [
 ];
 
 const CapSimulator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  const [modelId, setModelId] = useState(CAP_MODELS[0].id);
   const [capColor, setCapColor] = useState('#1a1a1a');
   const [capColorName, setCapColorName] = useState('Negro');
-  const [capImg, setCapImg] = useState(capBase);
+  const [capImg, setCapImg] = useState(CAP_MODELS[0].img);
   const [embColor, setEmbColor] = useState('#ffffff');
   const [embColorName, setEmbColorName] = useState('Blanco');
   const [logo, setLogo] = useState<string | null>(null);
-  const [logoScale, setLogoScale] = useState(30);
+  const [logoScale, setLogoScale] = useState(85);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const modelBase = CAP_MODELS.find(m => m.id === modelId)!.img;
 
   useEffect(() => {
     let active = true;
-    recolorCap(capBase, capColor).then(dataUrl => {
+    recolorCap(modelBase, capColor).then(dataUrl => {
       if (active) setCapImg(dataUrl);
     });
     return () => { active = false; };
-  }, [capColor]);
+  }, [capColor, modelBase]);
 
   const handleLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -103,26 +112,28 @@ const CapSimulator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   draggable={false}
                 />
 
-                {/* Logo encima en el panel frontal */}
+                {/* Logo encima en el panel frontal — limitado siempre a esta área */}
                 {logo && (
                   <div
-                    className="absolute"
+                    className="absolute flex items-center justify-center"
                     style={{
                       zIndex: 3,
-                      left: '50%',
-                      top: '30%',
-                      transform: 'translateX(-50%)',
-                      width: `${logoScale}%`,
+                      left: '33%',
+                      top: '43%',
+                      width: '34%',
+                      height: '24%',
                     }}
                   >
-                    <img
-                      src={logo}
-                      alt="Logo"
-                      className="w-full h-auto object-contain drop-shadow-sm"
-                      style={{
-                        filter: `drop-shadow(0 1px 2px rgba(0,0,0,0.3))`,
-                      }}
-                    />
+                    <div className="flex items-center justify-center" style={{ width: `${logoScale}%`, height: `${logoScale}%` }}>
+                      <img
+                        src={logo}
+                        alt="Logo"
+                        className="max-w-full max-h-full object-contain drop-shadow-sm"
+                        style={{
+                          filter: `drop-shadow(0 1px 2px rgba(0,0,0,0.3))`,
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -150,6 +161,28 @@ const CapSimulator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
           {/* ── Controles ── */}
           <div className="space-y-8">
+
+            {/* Modelo de gorra */}
+            <div>
+              <p className="text-[9px] font-medium text-grey tracking-[0.4em] uppercase mb-3">
+                Modelo — <span className="text-dark font-semibold">{CAP_MODELS.find(m => m.id === modelId)!.name}</span>
+              </p>
+              <div className="flex flex-wrap gap-2.5">
+                {CAP_MODELS.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => setModelId(m.id)}
+                    className={`px-4 py-2 rounded-full text-[11px] font-medium transition-all ${
+                      modelId === m.id
+                        ? 'bg-dark text-cream'
+                        : 'bg-grey-light text-grey hover:text-dark'
+                    }`}
+                  >
+                    {m.name}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Color de gorra */}
             <div>
@@ -228,8 +261,8 @@ const CapSimulator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   </p>
                   <input
                     type="range"
-                    min={10}
-                    max={60}
+                    min={30}
+                    max={100}
                     value={logoScale}
                     onChange={e => setLogoScale(Number(e.target.value))}
                     className="w-full accent-primary"
