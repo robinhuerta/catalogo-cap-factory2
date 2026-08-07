@@ -1,10 +1,11 @@
 // Recolorea una foto de gorra (fondo claro, gorra oscura) a un color arbitrario,
-// preservando el sombreado/brillo original y quitando el fondo.
+// preservando el sombreado/brillo original y quitando el fondo — incluyendo
+// sombras proyectadas separadas de la gorra (ej. la sombra sobre la mesa).
 
 let cachedSrc: string | null = null;
 let cachedImg: HTMLImageElement | null = null;
 let cachedCanvas: HTMLCanvasElement | null = null;
-let cachedLumRange: { min: number; max: number } | null = null;
+let cachedMask: { connected: Uint8Array; lum: Float32Array; min: number; max: number } | null = null;
 
 const BG_THRESHOLD = 232; // luminancia a partir de la cual se considera fondo
 const BG_FEATHER = 18; // ancho del borde suavizado (antialiasing)
@@ -62,13 +63,72 @@ function hslToRgb(h: number, s: number, l: number) {
   };
 }
 
+// Encuentra la gorra como la región oscura más grande de la imagen (componente
+// conexa de mayor tamaño), para descartar regiones desconectadas más chicas
+// como sombras proyectadas o ruido — sin asumir en qué parte del encuadre está.
+function findConnectedCap(lum: Float32Array, width: number, height: number): Uint8Array {
+  const isCandidate = (i: number) => lum[i] < BG_THRESHOLD;
+  const n = width * height;
+  const label = new Int32Array(n); // 0 = sin visitar, -1 = fondo, >0 = id de componente
+  const queue = new Int32Array(n);
+  const sizes: number[] = [0]; // índice 0 sin usar
+
+  for (let start = 0; start < n; start++) {
+    if (label[start] !== 0 || !isCandidate(start)) continue;
+    const id = sizes.length;
+    sizes.push(0);
+    let qHead = 0, qTail = 0;
+    label[start] = id;
+    queue[qTail++] = start;
+    while (qHead < qTail) {
+      const i = queue[qHead++];
+      sizes[id]++;
+      const x = i % width;
+      const y = (i - x) / width;
+      if (x > 0 && label[i - 1] === 0 && isCandidate(i - 1)) { label[i - 1] = id; queue[qTail++] = i - 1; }
+      if (x < width - 1 && label[i + 1] === 0 && isCandidate(i + 1)) { label[i + 1] = id; queue[qTail++] = i + 1; }
+      if (y > 0 && label[i - width] === 0 && isCandidate(i - width)) { label[i - width] = id; queue[qTail++] = i - width; }
+      if (y < height - 1 && label[i + width] === 0 && isCandidate(i + width)) { label[i + width] = id; queue[qTail++] = i + width; }
+    }
+  }
+
+  let largestId = 0, largestSize = 0;
+  for (let id = 1; id < sizes.length; id++) {
+    if (sizes[id] > largestSize) { largestSize = sizes[id]; largestId = id; }
+  }
+
+  const connected = new Uint8Array(n);
+  if (largestId > 0) {
+    for (let i = 0; i < n; i++) connected[i] = label[i] === largestId ? 1 : 0;
+  }
+  return connected;
+}
+
+function buildMask(data: Uint8ClampedArray, width: number, height: number) {
+  const n = width * height;
+  const lum = new Float32Array(n);
+  for (let i = 0, p = 0; i < n; i++, p += 4) {
+    lum[i] = 0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2];
+  }
+  const connected = findConnectedCap(lum, width, height);
+
+  let min = 255, max = 0;
+  for (let i = 0; i < n; i++) {
+    if (connected[i] && lum[i] < BG_THRESHOLD - BG_FEATHER) {
+      if (lum[i] < min) min = lum[i];
+      if (lum[i] > max) max = lum[i];
+    }
+  }
+  return { connected, lum, min, max };
+}
+
 export async function recolorCap(src: string, hex: string): Promise<string> {
   if (cachedSrc !== src) {
     cachedImg = await loadImage(src);
     cachedCanvas = document.createElement('canvas');
     cachedCanvas.width = cachedImg.naturalWidth;
     cachedCanvas.height = cachedImg.naturalHeight;
-    cachedLumRange = null;
+    cachedMask = null;
     cachedSrc = src;
   }
   const canvas = cachedCanvas!;
@@ -78,36 +138,29 @@ export async function recolorCap(src: string, hex: string): Promise<string> {
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
 
-  if (!cachedLumRange) {
-    let min = 255, max = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-      if (lum < BG_THRESHOLD - BG_FEATHER) {
-        if (lum < min) min = lum;
-        if (lum > max) max = lum;
-      }
-    }
-    cachedLumRange = { min, max };
+  if (!cachedMask) {
+    cachedMask = buildMask(data, canvas.width, canvas.height);
   }
-  const { min, max } = cachedLumRange;
+  const { connected, lum, min, max } = cachedMask;
   const span = Math.max(max - min, 1);
   const { h, s, l: baseL } = hexToHsl(hex);
 
   // Cache de color por nivel de sombra (256 escalones) para no recalcular HSL->RGB por píxel.
   const shadeCache = new Map<number, { r: number; g: number; b: number }>();
 
-  for (let i = 0; i < data.length; i += 4) {
-    const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-
-    let alpha = 255;
-    if (lum >= BG_THRESHOLD) {
-      alpha = 0;
-    } else if (lum > BG_THRESHOLD - BG_FEATHER) {
-      alpha = 255 * (1 - (lum - (BG_THRESHOLD - BG_FEATHER)) / BG_FEATHER);
+  for (let i = 0, p = 0; p < data.length; i++, p += 4) {
+    let alpha = 0;
+    if (connected[i]) {
+      const l0 = lum[i];
+      if (l0 < BG_THRESHOLD - BG_FEATHER) {
+        alpha = 255;
+      } else if (l0 < BG_THRESHOLD) {
+        alpha = 255 * (1 - (l0 - (BG_THRESHOLD - BG_FEATHER)) / BG_FEATHER);
+      }
     }
 
     if (alpha > 0) {
-      const shade = Math.min(1, Math.max(0, (lum - min) / span));
+      const shade = Math.min(1, Math.max(0, (lum[i] - min) / span));
       const bucket = Math.round(shade * 255);
       let rgb = shadeCache.get(bucket);
       if (!rgb) {
@@ -116,11 +169,11 @@ export async function recolorCap(src: string, hex: string): Promise<string> {
         rgb = hslToRgb(h, s, l);
         shadeCache.set(bucket, rgb);
       }
-      data[i] = rgb.r;
-      data[i + 1] = rgb.g;
-      data[i + 2] = rgb.b;
+      data[p] = rgb.r;
+      data[p + 1] = rgb.g;
+      data[p + 2] = rgb.b;
     }
-    data[i + 3] = alpha;
+    data[p + 3] = alpha;
   }
 
   ctx.putImageData(imageData, 0, 0);
