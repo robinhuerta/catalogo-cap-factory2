@@ -1322,96 +1322,104 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                 </button>
               </div>
               <div className="p-6">
-                {groupByLote(p.items).length > 1 && (
-                  <div className="flex flex-wrap items-center gap-2 mb-6">
-                    <button
-                      onClick={() => setViewFilterLote('')}
-                      className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${viewFilterLote === '' ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
-                    >
-                      Todos los lotes
-                    </button>
-                    {groupByLote(p.items).map(([loteName]) => (
-                      <button
-                        key={loteName}
-                        onClick={() => setViewFilterLote(loteName === viewFilterLote ? '' : loteName)}
-                        className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${viewFilterLote === loteName ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
-                      >
-                        {loteName}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {groupByLote(p.items).filter(([loteName]) => !viewFilterLote || loteName === viewFilterLote).map(([loteName, entries]) => {
-                  const loteTotal = entries.reduce((s, { item }) => s + (Number(item.cantidad) || 0), 0);
+                {(() => {
+                  const allLotes = groupByLote(p.items);
+                  const visibleLotes = allLotes.filter(([loteName]) => !viewFilterLote || loteName === viewFilterLote);
                   return (
-                    <div key={loteName} className="mb-8 last:mb-0">
-                      <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-dark/10">
-                        <div className="flex items-center gap-3">
-                          <h3 className="font-display font-bold text-dark text-sm">{loteName}</h3>
-                          <span className="text-[10px] text-grey">{entries.length} diseños · {loteTotal.toLocaleString('es-PE')} uds</span>
+                    <>
+                      {allLotes.length > 1 && (
+                        <div className="flex flex-wrap items-center gap-2 mb-6">
+                          <button
+                            onClick={() => setViewFilterLote('')}
+                            className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${viewFilterLote === '' ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
+                          >
+                            Todos los lotes
+                          </button>
+                          {allLotes.map(([loteName]) => (
+                            <button
+                              key={loteName}
+                              onClick={() => setViewFilterLote(loteName === viewFilterLote ? '' : loteName)}
+                              className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${viewFilterLote === loteName ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
+                            >
+                              {loteName}
+                            </button>
+                          ))}
                         </div>
-                        <div className="flex items-center gap-2">
-                          {ETAPAS.map(et => {
-                            const done = entries.filter(({ item }) => item[et.key]).length;
-                            const allDone = done === entries.length;
-                            return (
-                              <button
-                                key={et.key}
-                                onClick={() => toggleLoteStage(p.id, loteName, et.key)}
-                                className={`px-2.5 py-1 rounded-lg text-[9px] font-medium uppercase tracking-widest transition-colors ${allDone ? 'bg-green-500 text-white' : 'bg-grey-light text-grey hover:bg-grey-border'}`}
-                              >
-                                {et.label} {done}/{entries.length}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {entries.map(({ item: it, idx: i }) => {
-                          const doneCount = ETAPAS.filter(et => it[et.key]).length;
-                          return (
-                            <div key={i} className={`border rounded-xl overflow-hidden transition-all ${doneCount === ETAPAS.length ? 'border-green-300 bg-green-50/30' : 'border-grey-border'}`}>
-                              <div className="w-full aspect-square bg-grey-light cursor-zoom-in" onClick={() => it.imagen && setZoomImg(it.imagen)}>
-                                {it.imagen
-                                  ? <img src={it.imagen} alt="" className="w-full h-full object-cover" />
-                                  : <div className="w-full h-full flex items-center justify-center text-grey text-xs">Sin foto</div>}
+                      )}
+                      {visibleLotes.map(([loteName, entries]) => {
+                        const loteTotal = entries.reduce((s, { item }) => s + (Number(item.cantidad) || 0), 0);
+                        return (
+                          <div key={loteName} className="mb-8 last:mb-0">
+                            <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-dark/10">
+                              <div className="flex items-center gap-3">
+                                <h3 className="font-display font-bold text-dark text-sm">{loteName}</h3>
+                                <span className="text-[10px] text-grey">{entries.length} diseños · {loteTotal.toLocaleString('es-PE')} uds</span>
                               </div>
-                              <div className="p-3">
-                                <p className="font-medium text-dark text-xs truncate">{it.diseno || 'Sin nombre'}</p>
-                                <p className="text-grey text-[10px] mt-0.5">
-                                  {it.cantidad} uds{it.color && ` · ${it.color}`}{it.tela && ` · ${it.tela}`}
-                                </p>
-                                {it.notas && <p className="text-grey/70 text-[10px] mt-1 italic line-clamp-2">{it.notas}</p>}
-                                <input
-                                  type="text"
-                                  placeholder="Lote (ej. Orden 001)"
-                                  defaultValue={it.lote}
-                                  onChange={e => setViewItemLote(p.id, i, e.target.value)}
-                                  onBlur={() => commitViewItems(p.id)}
-                                  className="mt-2 w-full border border-grey-border rounded-lg px-2 py-1 text-[10px] text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors"
-                                />
-                                <div className="flex flex-col gap-1 mt-2">
-                                  {ETAPAS.map(et => (
+                              <div className="flex items-center gap-2">
+                                {ETAPAS.map(et => {
+                                  const done = entries.filter(({ item }) => item[et.key]).length;
+                                  const allDone = done === entries.length;
+                                  return (
                                     <button
                                       key={et.key}
-                                      onClick={() => toggleItemStage(p.id, i, et.key)}
-                                      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-medium transition-colors ${it[et.key] ? 'bg-green-500 text-white' : 'bg-grey-light text-grey hover:bg-grey-border'}`}
+                                      onClick={() => toggleLoteStage(p.id, loteName, et.key)}
+                                      className={`px-2.5 py-1 rounded-lg text-[9px] font-medium uppercase tracking-widest transition-colors ${allDone ? 'bg-green-500 text-white' : 'bg-grey-light text-grey hover:bg-grey-border'}`}
                                     >
-                                      <span className={`w-3 h-3 rounded-full border flex items-center justify-center flex-shrink-0 ${it[et.key] ? 'border-white bg-white/20' : 'border-grey'}`}>
-                                        {it[et.key] && <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                                      </span>
-                                      {et.label}
+                                      {et.label} {done}/{entries.length}
                                     </button>
-                                  ))}
-                                </div>
+                                  );
+                                })}
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                              {entries.map(({ item: it, idx: i }) => {
+                                const doneCount = ETAPAS.filter(et => it[et.key]).length;
+                                return (
+                                  <div key={i} className={`border rounded-xl overflow-hidden transition-all ${doneCount === ETAPAS.length ? 'border-green-300 bg-green-50/30' : 'border-grey-border'}`}>
+                                    <div className="w-full aspect-square bg-grey-light cursor-zoom-in" onClick={() => it.imagen && setZoomImg(it.imagen)}>
+                                      {it.imagen
+                                        ? <img src={it.imagen} alt="" className="w-full h-full object-cover" />
+                                        : <div className="w-full h-full flex items-center justify-center text-grey text-xs">Sin foto</div>}
+                                    </div>
+                                    <div className="p-3">
+                                      <p className="font-medium text-dark text-xs truncate">{it.diseno || 'Sin nombre'}</p>
+                                      <p className="text-grey text-[10px] mt-0.5">
+                                        {it.cantidad} uds{it.color && ` · ${it.color}`}{it.tela && ` · ${it.tela}`}
+                                      </p>
+                                      {it.notas && <p className="text-grey/70 text-[10px] mt-1 italic line-clamp-2">{it.notas}</p>}
+                                      <input
+                                        type="text"
+                                        placeholder="Lote (ej. Orden 001)"
+                                        defaultValue={it.lote}
+                                        onChange={e => setViewItemLote(p.id, i, e.target.value)}
+                                        onBlur={() => commitViewItems(p.id)}
+                                        className="mt-2 w-full border border-grey-border rounded-lg px-2 py-1 text-[10px] text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors"
+                                      />
+                                      <div className="flex flex-col gap-1 mt-2">
+                                        {ETAPAS.map(et => (
+                                          <button
+                                            key={et.key}
+                                            onClick={() => toggleItemStage(p.id, i, et.key)}
+                                            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-medium transition-colors ${it[et.key] ? 'bg-green-500 text-white' : 'bg-grey-light text-grey hover:bg-grey-border'}`}
+                                          >
+                                            <span className={`w-3 h-3 rounded-full border flex items-center justify-center flex-shrink-0 ${it[et.key] ? 'border-white bg-white/20' : 'border-grey'}`}>
+                                              {it[et.key] && <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                                            </span>
+                                            {et.label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </>
                   );
-                })}
+                })()}
               </div>
             </div>
           </div>
@@ -1452,26 +1460,29 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                     </button>
                   </div>
                 </div>
-                {groupByLote(p.items).length > 1 && (
-                  <div className="flex flex-wrap items-center gap-2 mt-4">
-                    <span className="text-[10px] text-grey uppercase tracking-widest mr-1">Imprimir:</span>
-                    <button
-                      onClick={() => setPrintFilterLote('')}
-                      className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${printFilterLote === '' ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
-                    >
-                      Todos los lotes
-                    </button>
-                    {groupByLote(p.items).map(([loteName]) => (
+                {(() => {
+                  const allLotes = groupByLote(p.items);
+                  return allLotes.length > 1 && (
+                    <div className="flex flex-wrap items-center gap-2 mt-4">
+                      <span className="text-[10px] text-grey uppercase tracking-widest mr-1">Imprimir:</span>
                       <button
-                        key={loteName}
-                        onClick={() => setPrintFilterLote(loteName === printFilterLote ? '' : loteName)}
-                        className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${printFilterLote === loteName ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
+                        onClick={() => setPrintFilterLote('')}
+                        className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${printFilterLote === '' ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
                       >
-                        {loteName}
+                        Todos los lotes
                       </button>
-                    ))}
-                  </div>
-                )}
+                      {allLotes.map(([loteName]) => (
+                        <button
+                          key={loteName}
+                          onClick={() => setPrintFilterLote(loteName === printFilterLote ? '' : loteName)}
+                          className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${printFilterLote === loteName ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
+                        >
+                          {loteName}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="p-8 print:p-0">
@@ -1480,64 +1491,66 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                   const printTotalUnidades = printLotes.reduce((s, [, entries]) => s + entries.reduce((s2, { item }) => s2 + (Number(item.cantidad) || 0), 0), 0);
                   const printTotalItems = printLotes.reduce((s, [, entries]) => s + entries.length, 0);
                   return (
-                    <div className="flex items-start justify-between mb-6 pb-4 border-b-2 border-dark">
-                      <div>
-                        <p className="text-[9px] text-grey uppercase tracking-widest">Cap Factory Perú</p>
-                        <h1 className="font-display text-2xl font-bold text-dark mt-0.5">{p.cliente}</h1>
-                        {printFilterLote && <p className="text-[10px] text-primary font-medium uppercase tracking-widest mt-1">Lote: {printFilterLote}</p>}
+                    <>
+                      <div className="flex items-start justify-between mb-6 pb-4 border-b-2 border-dark">
+                        <div>
+                          <p className="text-[9px] text-grey uppercase tracking-widest">Cap Factory Perú</p>
+                          <h1 className="font-display text-2xl font-bold text-dark mt-0.5">{p.cliente}</h1>
+                          {printFilterLote && <p className="text-[10px] text-primary font-medium uppercase tracking-widest mt-1">Lote: {printFilterLote}</p>}
+                        </div>
+                        <div className="text-right text-[11px] text-grey">
+                          {p.fecha_pedido && <p>Pedido: {p.fecha_pedido}</p>}
+                          {p.fecha_entrega && <p className="font-semibold text-dark">Entrega: {p.fecha_entrega}</p>}
+                          {p.telefono && <p>{p.telefono}</p>}
+                          <p className="mt-1">Total: <span className="font-semibold text-dark">{printTotalUnidades.toLocaleString('es-PE')} uds</span> · {printTotalItems} diseños</p>
+                        </div>
                       </div>
-                      <div className="text-right text-[11px] text-grey">
-                        {p.fecha_pedido && <p>Pedido: {p.fecha_pedido}</p>}
-                        {p.fecha_entrega && <p className="font-semibold text-dark">Entrega: {p.fecha_entrega}</p>}
-                        {p.telefono && <p>{p.telefono}</p>}
-                        <p className="mt-1">Total: <span className="font-semibold text-dark">{printTotalUnidades.toLocaleString('es-PE')} uds</span> · {printTotalItems} diseños</p>
-                      </div>
-                    </div>
+
+                      {printLotes.map(([loteName, entries], loteIdx, allLotes) => {
+                        const loteTotal = entries.reduce((s, { item }) => s + (Number(item.cantidad) || 0), 0);
+                        const isLast = loteIdx === allLotes.length - 1;
+                        return (
+                          <div key={loteName} className="lote-block mb-6" style={isLast ? undefined : { breakAfter: 'page' }}>
+                            <div className="flex items-baseline justify-between mb-2 bg-grey-light px-3 py-1.5 rounded-lg">
+                              <h3 className="font-display font-bold text-dark text-sm">{loteName} <span className="text-grey font-normal text-[10px]">· {p.cliente}</span></h3>
+                              <span className="text-[10px] text-grey">{entries.length} diseños · {loteTotal.toLocaleString('es-PE')} uds</span>
+                            </div>
+                            <table className="w-full text-[10px] border-collapse">
+                              <thead>
+                                <tr className="text-left text-grey border-b border-grey-border">
+                                  <th className="py-1.5 pr-2 font-medium w-12">Foto</th>
+                                  <th className="py-1.5 pr-2 font-medium">Diseño</th>
+                                  <th className="py-1.5 pr-2 font-medium">Color</th>
+                                  <th className="py-1.5 pr-2 font-medium">Tela</th>
+                                  <th className="py-1.5 pr-2 font-medium">Técnica</th>
+                                  <th className="py-1.5 pr-2 font-medium text-right">Cant.</th>
+                                  <th className="py-1.5 font-medium">Notas</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {entries.map(({ item: it }, i) => (
+                                  <tr key={i} className="border-b border-grey-border/60">
+                                    <td className="py-1.5 pr-2">
+                                      {it.imagen
+                                        ? <img src={it.imagen} alt="" className="w-9 h-9 object-cover rounded" />
+                                        : <div className="w-9 h-9 bg-grey-light rounded" />}
+                                    </td>
+                                    <td className="py-1.5 pr-2 text-dark">{it.diseno || '—'}</td>
+                                    <td className="py-1.5 pr-2 text-dark">{it.color || '—'}</td>
+                                    <td className="py-1.5 pr-2 text-dark">{it.tela || '—'}</td>
+                                    <td className="py-1.5 pr-2 text-dark">{it.tecnica || '—'}</td>
+                                    <td className="py-1.5 pr-2 text-dark text-right font-medium">{it.cantidad}</td>
+                                    <td className="py-1.5 text-grey italic">{it.notas}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })}
+                    </>
                   );
                 })()}
-
-                {groupByLote(p.items).filter(([loteName]) => !printFilterLote || loteName === printFilterLote).map(([loteName, entries], loteIdx, allLotes) => {
-                  const loteTotal = entries.reduce((s, { item }) => s + (Number(item.cantidad) || 0), 0);
-                  const isLast = loteIdx === allLotes.length - 1;
-                  return (
-                    <div key={loteName} className="lote-block mb-6" style={isLast ? undefined : { breakAfter: 'page' }}>
-                      <div className="flex items-baseline justify-between mb-2 bg-grey-light px-3 py-1.5 rounded-lg">
-                        <h3 className="font-display font-bold text-dark text-sm">{loteName} <span className="text-grey font-normal text-[10px]">· {p.cliente}</span></h3>
-                        <span className="text-[10px] text-grey">{entries.length} diseños · {loteTotal.toLocaleString('es-PE')} uds</span>
-                      </div>
-                      <table className="w-full text-[10px] border-collapse">
-                        <thead>
-                          <tr className="text-left text-grey border-b border-grey-border">
-                            <th className="py-1.5 pr-2 font-medium w-12">Foto</th>
-                            <th className="py-1.5 pr-2 font-medium">Diseño</th>
-                            <th className="py-1.5 pr-2 font-medium">Color</th>
-                            <th className="py-1.5 pr-2 font-medium">Tela</th>
-                            <th className="py-1.5 pr-2 font-medium">Técnica</th>
-                            <th className="py-1.5 pr-2 font-medium text-right">Cant.</th>
-                            <th className="py-1.5 font-medium">Notas</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {entries.map(({ item: it }, i) => (
-                            <tr key={i} className="border-b border-grey-border/60">
-                              <td className="py-1.5 pr-2">
-                                {it.imagen
-                                  ? <img src={it.imagen} alt="" className="w-9 h-9 object-cover rounded" />
-                                  : <div className="w-9 h-9 bg-grey-light rounded" />}
-                              </td>
-                              <td className="py-1.5 pr-2 text-dark">{it.diseno || '—'}</td>
-                              <td className="py-1.5 pr-2 text-dark">{it.color || '—'}</td>
-                              <td className="py-1.5 pr-2 text-dark">{it.tela || '—'}</td>
-                              <td className="py-1.5 pr-2 text-dark">{it.tecnica || '—'}</td>
-                              <td className="py-1.5 pr-2 text-dark text-right font-medium">{it.cantidad}</td>
-                              <td className="py-1.5 text-grey italic">{it.notas}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  );
-                })}
 
                 {p.notas && (
                   <div className="mt-6 pt-4 border-t border-grey-border">
