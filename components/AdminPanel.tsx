@@ -122,7 +122,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const [filterEstado, setFilterEstado] = useState<string>('');
   const [pedidoBulkProgress, setPedidoBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [pedidoViewId, setPedidoViewId] = useState<string | null>(null);
+  const [viewFilterLote, setViewFilterLote] = useState<string>('');
   const [pedidoPrintId, setPedidoPrintId] = useState<string | null>(null);
+  const [printFilterLote, setPrintFilterLote] = useState<string>('');
   const itemFileRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const pedidoBulkRef = useRef<HTMLInputElement>(null);
 
@@ -624,10 +626,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                       )}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <button onClick={() => setPedidoViewId(p.id)} className="px-3 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-[10px] font-medium uppercase tracking-widest transition-colors">
+                      <button onClick={() => { setViewFilterLote(''); setPedidoViewId(p.id); }} className="px-3 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-[10px] font-medium uppercase tracking-widest transition-colors">
                         Ver diseños
                       </button>
-                      <button onClick={() => setPedidoPrintId(p.id)} className="px-3 py-2 rounded-lg bg-dark/5 text-dark hover:bg-dark/10 text-[10px] font-medium uppercase tracking-widest transition-colors">
+                      <button onClick={() => { setPrintFilterLote(''); setPedidoPrintId(p.id); }} className="px-3 py-2 rounded-lg bg-dark/5 text-dark hover:bg-dark/10 text-[10px] font-medium uppercase tracking-widest transition-colors">
                         🖨️ Ficha
                       </button>
                       <button onClick={() => archivePedido(p)} title={p.activo ? 'Archivar' : 'Reactivar'}
@@ -1320,7 +1322,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                 </button>
               </div>
               <div className="p-6">
-                {groupByLote(p.items).map(([loteName, entries]) => {
+                {groupByLote(p.items).length > 1 && (
+                  <div className="flex flex-wrap items-center gap-2 mb-6">
+                    <button
+                      onClick={() => setViewFilterLote('')}
+                      className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${viewFilterLote === '' ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
+                    >
+                      Todos los lotes
+                    </button>
+                    {groupByLote(p.items).map(([loteName]) => (
+                      <button
+                        key={loteName}
+                        onClick={() => setViewFilterLote(loteName === viewFilterLote ? '' : loteName)}
+                        className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${viewFilterLote === loteName ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
+                      >
+                        {loteName}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {groupByLote(p.items).filter(([loteName]) => !viewFilterLote || loteName === viewFilterLote).map(([loteName, entries]) => {
                   const loteTotal = entries.reduce((s, { item }) => s + (Number(item.cantidad) || 0), 0);
                   return (
                     <div key={loteName} className="mb-8 last:mb-0">
@@ -1419,33 +1440,63 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
             `}</style>
             <div className="absolute inset-0 bg-dark/70 backdrop-blur-sm no-print" onClick={() => setPedidoPrintId(null)} />
             <div className="print-sheet relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl mb-10">
-              <div className="p-6 border-b border-grey-border flex items-center justify-between no-print sticky top-0 bg-white rounded-t-2xl z-10">
-                <h2 className="font-display text-lg font-bold text-dark">Ficha de producción</h2>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => window.print()} className="px-4 py-2 bg-primary text-cream rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-primary-dark transition-colors">
-                    🖨️ Imprimir / Guardar PDF
-                  </button>
-                  <button onClick={() => setPedidoPrintId(null)} className="w-8 h-8 rounded-full bg-grey-light hover:bg-grey-border flex items-center justify-center transition-colors">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
+              <div className="p-6 border-b border-grey-border no-print sticky top-0 bg-white rounded-t-2xl z-10">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-display text-lg font-bold text-dark">Ficha de producción</h2>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => window.print()} className="px-4 py-2 bg-primary text-cream rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-primary-dark transition-colors">
+                      🖨️ Imprimir / Guardar PDF
+                    </button>
+                    <button onClick={() => setPedidoPrintId(null)} className="w-8 h-8 rounded-full bg-grey-light hover:bg-grey-border flex items-center justify-center transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
                 </div>
+                {groupByLote(p.items).length > 1 && (
+                  <div className="flex flex-wrap items-center gap-2 mt-4">
+                    <span className="text-[10px] text-grey uppercase tracking-widest mr-1">Imprimir:</span>
+                    <button
+                      onClick={() => setPrintFilterLote('')}
+                      className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${printFilterLote === '' ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
+                    >
+                      Todos los lotes
+                    </button>
+                    {groupByLote(p.items).map(([loteName]) => (
+                      <button
+                        key={loteName}
+                        onClick={() => setPrintFilterLote(loteName === printFilterLote ? '' : loteName)}
+                        className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${printFilterLote === loteName ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
+                      >
+                        {loteName}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="p-8 print:p-0">
-                <div className="flex items-start justify-between mb-6 pb-4 border-b-2 border-dark">
-                  <div>
-                    <p className="text-[9px] text-grey uppercase tracking-widest">Cap Factory Perú</p>
-                    <h1 className="font-display text-2xl font-bold text-dark mt-0.5">{p.cliente}</h1>
-                  </div>
-                  <div className="text-right text-[11px] text-grey">
-                    {p.fecha_pedido && <p>Pedido: {p.fecha_pedido}</p>}
-                    {p.fecha_entrega && <p className="font-semibold text-dark">Entrega: {p.fecha_entrega}</p>}
-                    {p.telefono && <p>{p.telefono}</p>}
-                    <p className="mt-1">Total: <span className="font-semibold text-dark">{totalUnidades(p).toLocaleString('es-PE')} uds</span> · {p.items.length} diseños</p>
-                  </div>
-                </div>
+                {(() => {
+                  const printLotes = groupByLote(p.items).filter(([loteName]) => !printFilterLote || loteName === printFilterLote);
+                  const printTotalUnidades = printLotes.reduce((s, [, entries]) => s + entries.reduce((s2, { item }) => s2 + (Number(item.cantidad) || 0), 0), 0);
+                  const printTotalItems = printLotes.reduce((s, [, entries]) => s + entries.length, 0);
+                  return (
+                    <div className="flex items-start justify-between mb-6 pb-4 border-b-2 border-dark">
+                      <div>
+                        <p className="text-[9px] text-grey uppercase tracking-widest">Cap Factory Perú</p>
+                        <h1 className="font-display text-2xl font-bold text-dark mt-0.5">{p.cliente}</h1>
+                        {printFilterLote && <p className="text-[10px] text-primary font-medium uppercase tracking-widest mt-1">Lote: {printFilterLote}</p>}
+                      </div>
+                      <div className="text-right text-[11px] text-grey">
+                        {p.fecha_pedido && <p>Pedido: {p.fecha_pedido}</p>}
+                        {p.fecha_entrega && <p className="font-semibold text-dark">Entrega: {p.fecha_entrega}</p>}
+                        {p.telefono && <p>{p.telefono}</p>}
+                        <p className="mt-1">Total: <span className="font-semibold text-dark">{printTotalUnidades.toLocaleString('es-PE')} uds</span> · {printTotalItems} diseños</p>
+                      </div>
+                    </div>
+                  );
+                })()}
 
-                {groupByLote(p.items).map(([loteName, entries], loteIdx, allLotes) => {
+                {groupByLote(p.items).filter(([loteName]) => !printFilterLote || loteName === printFilterLote).map(([loteName, entries], loteIdx, allLotes) => {
                   const loteTotal = entries.reduce((s, { item }) => s + (Number(item.cantidad) || 0), 0);
                   const isLast = loteIdx === allLotes.length - 1;
                   return (
