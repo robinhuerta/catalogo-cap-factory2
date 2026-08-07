@@ -1,14 +1,13 @@
 // Recolorea una foto de gorra (fondo claro, gorra oscura) a un color arbitrario,
 // preservando el sombreado/brillo original y quitando el fondo — incluyendo
 // sombras proyectadas separadas de la gorra (ej. la sombra sobre la mesa).
+// El color y ancho del fondo se detectan por imagen (no se asume blanco puro).
 
 let cachedSrc: string | null = null;
 let cachedImg: HTMLImageElement | null = null;
 let cachedCanvas: HTMLCanvasElement | null = null;
-let cachedMask: { connected: Uint8Array; lum: Float32Array; min: number; max: number } | null = null;
+let cachedMask: { connected: Uint8Array; lum: Float32Array; min: number; max: number; threshold: number; feather: number } | null = null;
 
-const BG_THRESHOLD = 232; // luminancia a partir de la cual se considera fondo
-const BG_FEATHER = 18; // ancho del borde suavizado (antialiasing)
 const SHADE_AMPLITUDE = 24; // puntos de luminosidad (HSL) entre sombra y brillo
 const MIN_LIGHTNESS = 4;
 const MAX_LIGHTNESS = 96;
@@ -63,13 +62,29 @@ function hslToRgb(h: number, s: number, l: number) {
   };
 }
 
-// Encuentra la gorra como la región oscura más grande de la imagen (componente
-// conexa de mayor tamaño), para descartar regiones desconectadas más chicas
-// como sombras proyectadas o ruido — sin asumir en qué parte del encuadre está.
-function findConnectedCap(lum: Float32Array, width: number, height: number): Uint8Array {
-  const isCandidate = (i: number) => lum[i] < BG_THRESHOLD;
+// Estima la luminancia del fondo a partir del borde de la imagen (percentil alto,
+// para que una franja de sombra tocando el borde no baje la estimación).
+function estimateBackgroundLum(lum: Float32Array, width: number, height: number): number {
+  const samples: number[] = [];
+  for (let x = 0; x < width; x++) {
+    samples.push(lum[x]);
+    samples.push(lum[(height - 1) * width + x]);
+  }
+  for (let y = 0; y < height; y++) {
+    samples.push(lum[y * width]);
+    samples.push(lum[y * width + width - 1]);
+  }
+  samples.sort((a, b) => a - b);
+  return samples[Math.floor(samples.length * 0.85)];
+}
+
+// Encuentra la gorra como la región más grande de píxeles claramente distintos
+// del fondo (componente conexa de mayor tamaño), para descartar regiones
+// desconectadas más chicas como sombras proyectadas o ruido.
+function findConnectedCap(lum: Float32Array, width: number, height: number, threshold: number): Uint8Array {
+  const isCandidate = (i: number) => lum[i] < threshold;
   const n = width * height;
-  const label = new Int32Array(n); // 0 = sin visitar, -1 = fondo, >0 = id de componente
+  const label = new Int32Array(n);
   const queue = new Int32Array(n);
   const sizes: number[] = [0]; // índice 0 sin usar
 
@@ -110,16 +125,21 @@ function buildMask(data: Uint8ClampedArray, width: number, height: number) {
   for (let i = 0, p = 0; i < n; i++, p += 4) {
     lum[i] = 0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2];
   }
-  const connected = findConnectedCap(lum, width, height);
+
+  const bgLum = estimateBackgroundLum(lum, width, height);
+  const threshold = Math.max(30, bgLum - 12);
+  const feather = Math.min(18, Math.max(4, threshold * 0.3));
+
+  const connected = findConnectedCap(lum, width, height, threshold);
 
   let min = 255, max = 0;
   for (let i = 0; i < n; i++) {
-    if (connected[i] && lum[i] < BG_THRESHOLD - BG_FEATHER) {
+    if (connected[i] && lum[i] < threshold - feather) {
       if (lum[i] < min) min = lum[i];
       if (lum[i] > max) max = lum[i];
     }
   }
-  return { connected, lum, min, max };
+  return { connected, lum, min, max, threshold, feather };
 }
 
 export async function recolorCap(src: string, hex: string): Promise<string> {
@@ -141,7 +161,7 @@ export async function recolorCap(src: string, hex: string): Promise<string> {
   if (!cachedMask) {
     cachedMask = buildMask(data, canvas.width, canvas.height);
   }
-  const { connected, lum, min, max } = cachedMask;
+  const { connected, lum, min, max, threshold, feather } = cachedMask;
   const span = Math.max(max - min, 1);
   const { h, s, l: baseL } = hexToHsl(hex);
 
@@ -152,10 +172,10 @@ export async function recolorCap(src: string, hex: string): Promise<string> {
     let alpha = 0;
     if (connected[i]) {
       const l0 = lum[i];
-      if (l0 < BG_THRESHOLD - BG_FEATHER) {
+      if (l0 < threshold - feather) {
         alpha = 255;
-      } else if (l0 < BG_THRESHOLD) {
-        alpha = 255 * (1 - (l0 - (BG_THRESHOLD - BG_FEATHER)) / BG_FEATHER);
+      } else if (l0 < threshold) {
+        alpha = 255 * (1 - (l0 - (threshold - feather)) / feather);
       }
     }
 

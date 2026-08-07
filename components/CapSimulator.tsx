@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { recolorCap } from '../lib/recolorCap';
 import capBase5p from '../images/gorra-snapback-negra.jpg';
-import capBase6p from '../images/gorra-6paneles-gris.jpg';
+import capBase6p from '../images/gorra-6paneles-trucker.jpg';
 
 const CAP_MODELS = [
   { id: '5p', name: '5 Paneles', img: capBase5p },
