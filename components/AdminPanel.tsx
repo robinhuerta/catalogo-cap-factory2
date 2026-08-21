@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api, BordadoPosicion, BordadosPorPosicion, DBProduct, DBProject, DBPedido, PedidoItem } from '../lib/api';
+import ThreadSelect from './ThreadSelect';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'capfactory2025';
 
@@ -1581,8 +1582,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                                       </select>
                                       <input type="number" min="0" placeholder="Cant. Colores" value={posData.numero_colores || ''} onChange={e => setBordadoField(idx, posicion.key, 'numero_colores', parseInt(e.target.value) || 0)}
                                         className="border border-grey-border rounded-lg px-2.5 py-1.5 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
-                                      <input type="text" placeholder="Colores de Hilo (ej. rojo)" value={posData.colores_hilo || ''} onChange={e => setBordadoField(idx, posicion.key, 'colores_hilo', e.target.value)}
-                                        className="border border-grey-border rounded-lg px-2.5 py-1.5 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                                      <ThreadSelect 
+                                        value={posData.colores_hilo || ''} 
+                                        onChange={val => setBordadoField(idx, posicion.key, 'colores_hilo', val)} 
+                                      />
                                       <input type="text" placeholder="Color de Jebe (3D)" value={posData.color_jebe || ''} onChange={e => setBordadoField(idx, posicion.key, 'color_jebe', e.target.value)}
                                         className="border border-grey-border rounded-lg px-2.5 py-1.5 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors col-span-2" />
                                     </div>
