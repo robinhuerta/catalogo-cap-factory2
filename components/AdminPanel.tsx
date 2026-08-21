@@ -789,8 +789,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                                       <h3 className="font-display text-sm font-bold text-dark truncate mt-0.5">{item.diseno || 'Diseño sin nombre'}</h3>
                                       <p className="text-[11px] text-grey mt-1">{item.cantidad.toLocaleString('es-PE')} uds{item.color && ` · ${item.color}`}</p>
                                       {item.tecnica && <p className="text-[10px] text-grey mt-0.5 truncate">{item.tecnica}</p>}
-                                      {item.bastidor && <p className="text-[10px] text-primary font-medium mt-0.5">Bastidor: {item.bastidor}</p>}
-                                      {(item.colores_maquina || item.numero_colores) && <p className="text-[10px] text-grey mt-0.5">Máquina: {item.colores_maquina || 0} · Diseño: {item.numero_colores || 0} colores</p>}
                                     </div>
                                   </div>
                                   <div className="p-3">
@@ -798,30 +796,36 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                                       <span className="text-[9px] text-grey uppercase tracking-widest">Posiciones</span>
                                       <span className={`text-[10px] font-medium ${resumen.listos === resumen.requeridos.length ? 'text-green-600' : 'text-grey'}`}>{resumen.listos}/{resumen.requeridos.length} listas</span>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-1 gap-2.5">
                                       {resumen.requeridos.map(posicion => {
                                         const estado = bordados[posicion.key]!;
                                         const saveKey = `${pedido.id}:${itemIdx}:${posicion.key}`;
                                         const guardando = bordadoSaving === saveKey;
                                         return (
-                                          <button
-                                            key={posicion.key}
-                                            onClick={() => actualizarBordadoPosicion(pedido.id, itemIdx, posicion.key)}
-                                            disabled={bordadoSaving !== null}
-                                            className={`min-h-14 rounded-xl px-2 py-2 text-left text-[11px] font-medium transition-all disabled:opacity-60 ${estado.listo ? 'bg-green-500 text-white' : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'}`}
-                                          >
-                                            <span className="block text-[9px] uppercase tracking-widest opacity-80">{posicion.short}</span>
-                                            <span className="block mt-0.5">{guardando ? 'Guardando…' : estado.listo ? '✓ Listo' : 'Pendiente'}</span>
-                                          </button>
+                                          <div key={posicion.key} className={`rounded-xl border flex flex-col overflow-hidden transition-all ${estado.listo ? 'bg-green-50/50 border-green-200' : 'bg-amber-50/30 border-amber-200'}`}>
+                                            <div className="p-2.5 flex-1 space-y-1">
+                                              <div className="flex items-center justify-between mb-1.5">
+                                                <span className={`text-[10px] font-bold uppercase tracking-widest ${estado.listo ? 'text-green-700' : 'text-amber-800'}`}>{posicion.label}</span>
+                                                {estado.nombre_dst && <span className="bg-white border px-1.5 py-0.5 rounded text-[9px] text-dark font-mono truncate max-w-[100px]">{estado.nombre_dst}</span>}
+                                              </div>
+                                              
+                                              {estado.bastidor && <p className="text-[10px] text-dark"><span className="font-medium text-grey">Bastidor:</span> {estado.bastidor}</p>}
+                                              {estado.numero_colores > 0 && <p className="text-[10px] text-dark"><span className="font-medium text-grey">Colores:</span> {estado.numero_colores}</p>}
+                                              {estado.colores_hilo && <p className="text-[10px] text-dark"><span className="font-medium text-grey">Hilos:</span> {estado.colores_hilo}</p>}
+                                              {estado.color_jebe && <p className="text-[10px] text-dark"><span className="font-medium text-grey">Jebe 3D:</span> {estado.color_jebe}</p>}
+                                            </div>
+                                            
+                                            <button
+                                              onClick={() => actualizarBordadoPosicion(pedido.id, itemIdx, posicion.key)}
+                                              disabled={bordadoSaving !== null}
+                                              className={`w-full py-2 text-[10px] font-bold uppercase tracking-widest border-t transition-colors disabled:opacity-60 ${estado.listo ? 'bg-green-500 text-white border-green-600 hover:bg-green-600' : 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200'}`}
+                                            >
+                                              {guardando ? 'Guardando…' : estado.listo ? '✓ Listo (Deshacer)' : 'Marcar como Listo'}
+                                            </button>
+                                          </div>
                                         );
                                       })}
                                     </div>
-                                    {(item.colores_hilo || item.color_jebe) && (
-                                      <div className="mt-2.5 rounded-lg bg-grey-light px-2.5 py-2 text-[10px] text-grey space-y-0.5">
-                                        {item.colores_hilo && <p><span className="font-medium text-dark">Hilos:</span> {item.colores_hilo}</p>}
-                                        {item.color_jebe && <p><span className="font-medium text-dark">Jebe alto relieve:</span> {item.color_jebe}</p>}
-                                      </div>
-                                    )}
                                     {item.notas && <p className="mt-3 text-[10px] text-grey italic border-t border-grey-border pt-2">{item.notas}</p>}
                                   </div>
                                 </article>
