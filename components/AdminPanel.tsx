@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { api, DBProduct, DBProject, DBPedido, PedidoItem } from '../lib/api';
+import { api, BordadoPosicion, BordadosPorPosicion, DBProduct, DBProject, DBPedido, PedidoItem } from '../lib/api';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'capfactory2025';
 
@@ -33,8 +33,8 @@ const ESTADO_COLORS: Record<string, string> = {
 };
 
 const EMPTY_ITEM: PedidoItem = {
-  diseno: '', color: '', tela: '', cantidad: 50, tecnica: '', imagen: '', notas: '', lote: '',
-  corte: false, confeccion: false, bordado: false,
+  diseno: '', color: '', tela: '', cantidad: 50, tecnica: '', bastidor: '', colores_maquina: 0, numero_colores: 0, colores_hilo: '', color_jebe: '', imagen: '', notas: '', lote: '',
+  corte: false, confeccion: false, bordado: false, bordados: bordadosIniciales(),
 };
 
 const SIN_LOTE = 'Sin agrupar';
@@ -44,6 +44,40 @@ const ETAPAS = [
   { key: 'confeccion' as const, label: 'Confección' },
   { key: 'bordado' as const, label: 'Bordado' },
 ];
+
+const POSICIONES_BORDADO: { key: BordadoPosicion; label: string; short: string }[] = [
+  { key: 'frontal', label: 'Bordado frontal', short: 'Frontal' },
+  { key: 'lateral_izquierdo', label: 'Lateral izquierdo', short: 'Lateral izq.' },
+  { key: 'lateral_derecho', label: 'Lateral derecho', short: 'Lateral der.' },
+  { key: 'posterior', label: 'Bordado posterior', short: 'Posterior' },
+];
+
+function bordadosIniciales(): BordadosPorPosicion {
+  return {
+    frontal: { requerido: true, listo: false },
+    lateral_izquierdo: { requerido: false, listo: false },
+    lateral_derecho: { requerido: false, listo: false },
+    posterior: { requerido: false, listo: false },
+  };
+}
+
+/** Convierte el check de bordado de pedidos antiguos en un bordado frontal. */
+const obtenerBordados = (item: PedidoItem): BordadosPorPosicion => {
+  const legacy = bordadosIniciales();
+  legacy.frontal = { requerido: true, listo: Boolean(item.bordado) };
+  return { ...legacy, ...(item.bordados || {}) };
+};
+
+const bordadoTerminado = (bordados: BordadosPorPosicion) => {
+  const requeridos = POSICIONES_BORDADO.filter(({ key }) => bordados[key]?.requerido);
+  return requeridos.length > 0 && requeridos.every(({ key }) => bordados[key]?.listo);
+};
+
+const resumenBordado = (item: PedidoItem) => {
+  const bordados = obtenerBordados(item);
+  const requeridos = POSICIONES_BORDADO.filter(({ key }) => bordados[key]?.requerido);
+  return { requeridos, listos: requeridos.filter(({ key }) => bordados[key]?.listo).length };
+};
 
 const EMPTY_PEDIDO: Omit<DBPedido, 'id' | 'created_at'> = {
   cliente: '', telefono: '',
@@ -101,7 +135,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const bulkRef = useRef<HTMLInputElement>(null);
 
   // ── Projects state ───────────────────────────────────
-  const [adminTab, setAdminTab] = useState<'products' | 'projects' | 'pedidos'>('products');
+  const [adminTab, setAdminTab] = useState<'products' | 'projects' | 'pedidos' | 'bordado'>('products');
   const [dbProjects, setDbProjects] = useState<DBProject[]>([]);
   const [projectModal, setProjectModal] = useState(false);
   const [projectForm, setProjectForm] = useState<Omit<DBProject, 'id' | 'created_at'>>(EMPTY_PROJECT);
@@ -125,10 +159,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const [viewFilterLote, setViewFilterLote] = useState<string>('');
   const [pedidoPrintId, setPedidoPrintId] = useState<string | null>(null);
   const [printFilterLote, setPrintFilterLote] = useState<string>('');
+  const [bordadoFilter, setBordadoFilter] = useState<'pending' | 'done' | 'all'>('pending');
+  const [bordadoLote, setBordadoLote] = useState('');
+  const [bordadoSaving, setBordadoSaving] = useState<string | null>(null);
+  const [bordadoError, setBordadoError] = useState('');
   const itemFileRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const pedidoBulkRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { if (auth) { load(); loadProjects(); loadPedidos(); } }, [auth]);
+
+  // El coordinador puede dejar este tablero abierto en PC y ver el avance sin recargar.
+  useEffect(() => {
+    if (!auth || adminTab !== 'bordado') return;
+    const timer = window.setInterval(() => { void loadPedidos(); }, 30000);
+    return () => window.clearInterval(timer);
+  }, [auth, adminTab]);
 
   const loadPedidos = async () => {
     const data = await api.list('pedidos', true, pw);
@@ -221,7 +266,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const toggleItemStage = async (pedidoId: string, itemIdx: number, stage: 'corte' | 'confeccion' | 'bordado') => {
     const pedido = pedidos.find(p => p.id === pedidoId);
     if (!pedido) return;
-    const items = pedido.items.map((it, i) => i === itemIdx ? { ...it, [stage]: !it[stage] } : it);
+    const items = pedido.items.map((it, i) => {
+      if (i !== itemIdx) return it;
+      if (stage !== 'bordado') return { ...it, [stage]: !it[stage] };
+      const bordados = obtenerBordados(it);
+      const listo = !bordadoTerminado(bordados);
+      const actualizados = Object.fromEntries(POSICIONES_BORDADO.map(({ key }) => [
+        key,
+        { ...bordados[key]!, listo: bordados[key]?.requerido ? listo : false },
+      ])) as BordadosPorPosicion;
+      return { ...it, bordado: listo, bordados: actualizados };
+    });
     setPedidos(ps => ps.map(p => p.id === pedidoId ? { ...p, items } : p));
     await api.update('pedidos', pedidoId, { items }, pw);
   };
@@ -243,9 +298,54 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
     if (!pedido) return;
     const inLote = pedido.items.filter(it => (it.lote || SIN_LOTE) === loteName);
     const allDone = inLote.every(it => it[stage]);
-    const items = pedido.items.map(it => (it.lote || SIN_LOTE) === loteName ? { ...it, [stage]: !allDone } : it);
+    const items = pedido.items.map(it => {
+      if ((it.lote || SIN_LOTE) !== loteName) return it;
+      if (stage !== 'bordado') return { ...it, [stage]: !allDone };
+      const bordados = obtenerBordados(it);
+      const actualizados = Object.fromEntries(POSICIONES_BORDADO.map(({ key }) => [
+        key,
+        { ...bordados[key]!, listo: bordados[key]?.requerido ? !allDone : false },
+      ])) as BordadosPorPosicion;
+      return { ...it, bordado: !allDone, bordados: actualizados };
+    });
     setPedidos(ps => ps.map(p => p.id === pedidoId ? { ...p, items } : p));
     await api.update('pedidos', pedidoId, { items }, pw);
+  };
+
+  const setBordadoRequerido = (idx: number, posicion: BordadoPosicion, requerido: boolean) => {
+    setPedidoForm(form => ({
+      ...form,
+      items: form.items.map((item, i) => {
+        if (i !== idx) return item;
+        const bordados = obtenerBordados(item);
+        const actualizados = { ...bordados, [posicion]: { requerido, listo: requerido ? bordados[posicion]?.listo ?? false : false } };
+        return { ...item, bordados: actualizados, bordado: bordadoTerminado(actualizados) };
+      }),
+    }));
+  };
+
+  const actualizarBordadoPosicion = async (pedidoId: string, itemIdx: number, posicion: BordadoPosicion) => {
+    const pedido = pedidos.find(p => p.id === pedidoId);
+    if (!pedido) return;
+    const item = pedido.items[itemIdx];
+    const bordados = obtenerBordados(item);
+    if (!bordados[posicion]?.requerido) return;
+    const actualizados = { ...bordados, [posicion]: { ...bordados[posicion]!, listo: !bordados[posicion]!.listo } };
+    const items = pedido.items.map((it, i) => i === itemIdx
+      ? { ...it, bordados: actualizados, bordado: bordadoTerminado(actualizados) }
+      : it);
+    const saveKey = `${pedidoId}:${itemIdx}:${posicion}`;
+    setBordadoError('');
+    setBordadoSaving(saveKey);
+    setPedidos(ps => ps.map(p => p.id === pedidoId ? { ...p, items } : p));
+    try {
+      await api.update('pedidos', pedidoId, { items }, pw);
+    } catch {
+      setBordadoError('No se pudo guardar el cambio. Revisa tu conexión e inténtalo otra vez.');
+      await loadPedidos();
+    } finally {
+      setBordadoSaving(null);
+    }
   };
 
   const groupByLote = (items: PedidoItem[]) => {
@@ -458,7 +558,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
             <span className="font-display font-bold text-cream text-sm">Admin</span>
           </div>
           {/* Tabs */}
-          <div className="flex items-center gap-1 bg-white/10 rounded-full p-1">
+          <div className="flex items-center gap-1 bg-white/10 rounded-full p-1 overflow-x-auto max-w-full">
+            <button
+              onClick={() => setAdminTab('bordado')}
+              className={`px-4 py-1.5 rounded-full text-[11px] font-medium tracking-widest uppercase transition-colors ${adminTab === 'bordado' ? 'bg-primary text-cream' : 'text-cream/60 hover:text-cream'}`}
+            >
+              Bordado
+            </button>
             <button
               onClick={() => setAdminTab('products')}
               className={`px-4 py-1.5 rounded-full text-[11px] font-medium tracking-widest uppercase transition-colors ${adminTab === 'products' ? 'bg-white text-dark' : 'text-cream/60 hover:text-cream'}`}
@@ -499,11 +605,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
             <button onClick={openAddProject} className="bg-primary text-cream px-4 py-2 rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-primary-dark transition-colors">
               + Nuevo proyecto
             </button>
-          ) : (
+          ) : adminTab === 'pedidos' ? (
             <button onClick={openAddPedido} className="bg-primary text-cream px-4 py-2 rounded-full text-[11px] font-medium tracking-widest uppercase hover:bg-primary-dark transition-colors">
               + Nuevo pedido
             </button>
-          )}
+          ) : null}
           <button onClick={onExit} className="text-grey hover:text-cream text-[11px] transition-colors px-3 py-2">Ver catálogo</button>
           <button onClick={() => setAuth(false)} className="text-grey hover:text-red-400 text-[11px] transition-colors px-3 py-2">Salir</button>
         </div>
@@ -560,6 +666,165 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
       )}
 
       {/* ── Pedidos list (privado) ──────────────────────── */}
+      {adminTab === 'bordado' && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+          {(() => {
+            const filas = pedidos
+              .filter(p => p.activo && p.estado !== 'cancelado')
+              .flatMap(p => p.items.map((item, itemIdx) => ({ pedido: p, item, itemIdx, lote: item.lote || SIN_LOTE })));
+            const lotes = [...new Set(filas.map(fila => fila.lote))];
+            const filtradas = filas.filter(fila => {
+              const resumen = resumenBordado(fila.item);
+              const terminado = resumen.requeridos.length > 0 && resumen.listos === resumen.requeridos.length;
+              return (!bordadoLote || fila.lote === bordadoLote)
+                && (bordadoFilter === 'all' || (bordadoFilter === 'done' ? terminado : !terminado));
+            });
+            const tareas = filas.reduce((total, fila) => total + resumenBordado(fila.item).requeridos.length, 0);
+            const tareasListas = filas.reduce((total, fila) => total + resumenBordado(fila.item).listos, 0);
+            const porLote = filtradas.reduce((map, fila) => {
+              const actuales = map.get(fila.lote) || [];
+              actuales.push(fila);
+              map.set(fila.lote, actuales);
+              return map;
+            }, new Map<string, typeof filtradas>());
+
+            return (
+              <>
+                <div className="mb-6 sm:mb-8">
+                  <p className="text-[10px] text-primary font-medium uppercase tracking-[0.3em] mb-2">Producción en vivo</p>
+                  <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                    <div>
+                      <h1 className="font-display text-3xl sm:text-4xl font-bold text-dark">Mesa de bordado</h1>
+                      <p className="text-grey text-sm mt-1">Marca cada posición al terminarla. El coordinador ve el mismo avance desde su PC.</p>
+                    </div>
+                    <div className="bg-white border border-grey-border rounded-xl px-4 py-3 min-w-[190px]">
+                      <div className="flex items-center justify-between gap-3"><p className="text-[9px] text-grey uppercase tracking-widest">Avance total</p><button onClick={() => void loadPedidos()} className="text-[9px] text-primary font-medium uppercase tracking-widest hover:text-primary-dark">Actualizar</button></div>
+                      <p className="font-display text-xl font-bold text-dark mt-0.5">{tareasListas}/{tareas} <span className="text-[11px] text-grey font-medium">posiciones listas</span></p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-grey-border rounded-2xl p-3 sm:p-4 mb-6 flex flex-col lg:flex-row lg:items-center gap-3">
+                  <div className="flex flex-wrap gap-2 flex-1">
+                    {([
+                      ['pending', 'Pendientes'],
+                      ['done', 'Terminados'],
+                      ['all', 'Todos'],
+                    ] as const).map(([filter, label]) => (
+                      <button
+                        key={filter}
+                        onClick={() => setBordadoFilter(filter)}
+                        className={`px-4 py-2.5 rounded-xl text-[11px] font-medium uppercase tracking-widest transition-colors ${bordadoFilter === filter ? 'bg-dark text-cream' : 'bg-grey-light text-grey hover:text-dark'}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <select
+                    value={bordadoLote}
+                    onChange={e => setBordadoLote(e.target.value)}
+                    className="w-full lg:w-56 border border-grey-border rounded-xl px-3 py-2.5 text-[11px] text-dark bg-white focus:outline-none focus:border-primary"
+                  >
+                    <option value="">Todos los lotes</option>
+                    {lotes.map(lote => <option key={lote} value={lote}>{lote}</option>)}
+                  </select>
+                </div>
+
+                {bordadoError && (
+                  <div className="mb-5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600 flex items-center justify-between gap-3">
+                    <span>{bordadoError}</span>
+                    <button onClick={() => setBordadoError('')} className="font-medium">Cerrar</button>
+                  </div>
+                )}
+
+                {filtradas.length === 0 ? (
+                  <div className="bg-white border border-grey-border rounded-2xl text-center py-20 px-6">
+                    <p className="font-display text-xl font-bold text-dark">No hay bordados en esta vista</p>
+                    <p className="text-grey text-sm mt-2">Cambia el filtro o configura las posiciones de bordado al editar un pedido.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    {Array.from(porLote.entries()).map(([lote, items]) => {
+                      const totalLote = items.reduce((total, fila) => total + resumenBordado(fila.item).requeridos.length, 0);
+                      const listosLote = items.reduce((total, fila) => total + resumenBordado(fila.item).listos, 0);
+                      const avance = totalLote ? Math.round((listosLote / totalLote) * 100) : 0;
+                      return (
+                        <section key={lote} className="bg-white border border-grey-border rounded-2xl overflow-hidden">
+                          <div className="px-4 sm:px-6 py-4 border-b border-grey-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div>
+                              <p className="text-[9px] text-primary font-medium uppercase tracking-widest">Lote</p>
+                              <h2 className="font-display text-lg font-bold text-dark">{lote}</h2>
+                            </div>
+                            <div className="sm:text-right">
+                              <p className="text-[11px] font-medium text-dark">{listosLote}/{totalLote} posiciones listas · {avance}%</p>
+                              <div className="w-full sm:w-40 h-1.5 bg-grey-light rounded-full mt-1.5 overflow-hidden"><div className="h-full bg-green-500 rounded-full" style={{ width: `${avance}%` }} /></div>
+                            </div>
+                          </div>
+                          <div className="p-3 sm:p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {items.map(({ pedido, item, itemIdx }) => {
+                              const bordados = obtenerBordados(item);
+                              const resumen = resumenBordado(item);
+                              return (
+                                <article key={`${pedido.id}-${itemIdx}`} className={`border rounded-xl overflow-hidden ${resumen.listos === resumen.requeridos.length ? 'border-green-300 bg-green-50/30' : 'border-grey-border'}`}>
+                                  <div className="flex gap-3 p-3 border-b border-grey-border bg-white">
+                                    <button onClick={() => item.imagen && setZoomImg(item.imagen)} className="w-20 h-20 rounded-lg overflow-hidden bg-grey-light flex-shrink-0">
+                                      {item.imagen ? <img src={item.imagen} alt={`Referencia ${item.diseno}`} className="w-full h-full object-cover" /> : <span className="text-[9px] text-grey">Sin foto</span>}
+                                    </button>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-[9px] text-primary font-medium uppercase tracking-widest truncate">{pedido.cliente}</p>
+                                      <h3 className="font-display text-sm font-bold text-dark truncate mt-0.5">{item.diseno || 'Diseño sin nombre'}</h3>
+                                      <p className="text-[11px] text-grey mt-1">{item.cantidad.toLocaleString('es-PE')} uds{item.color && ` · ${item.color}`}</p>
+                                      {item.tecnica && <p className="text-[10px] text-grey mt-0.5 truncate">{item.tecnica}</p>}
+                                      {item.bastidor && <p className="text-[10px] text-primary font-medium mt-0.5">Bastidor: {item.bastidor}</p>}
+                                      {(item.colores_maquina || item.numero_colores) && <p className="text-[10px] text-grey mt-0.5">Máquina: {item.colores_maquina || 0} · Diseño: {item.numero_colores || 0} colores</p>}
+                                    </div>
+                                  </div>
+                                  <div className="p-3">
+                                    <div className="flex items-center justify-between mb-2.5">
+                                      <span className="text-[9px] text-grey uppercase tracking-widest">Posiciones</span>
+                                      <span className={`text-[10px] font-medium ${resumen.listos === resumen.requeridos.length ? 'text-green-600' : 'text-grey'}`}>{resumen.listos}/{resumen.requeridos.length} listas</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      {resumen.requeridos.map(posicion => {
+                                        const estado = bordados[posicion.key]!;
+                                        const saveKey = `${pedido.id}:${itemIdx}:${posicion.key}`;
+                                        const guardando = bordadoSaving === saveKey;
+                                        return (
+                                          <button
+                                            key={posicion.key}
+                                            onClick={() => actualizarBordadoPosicion(pedido.id, itemIdx, posicion.key)}
+                                            disabled={bordadoSaving !== null}
+                                            className={`min-h-14 rounded-xl px-2 py-2 text-left text-[11px] font-medium transition-all disabled:opacity-60 ${estado.listo ? 'bg-green-500 text-white' : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'}`}
+                                          >
+                                            <span className="block text-[9px] uppercase tracking-widest opacity-80">{posicion.short}</span>
+                                            <span className="block mt-0.5">{guardando ? 'Guardando…' : estado.listo ? '✓ Listo' : 'Pendiente'}</span>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                    {(item.colores_hilo || item.color_jebe) && (
+                                      <div className="mt-2.5 rounded-lg bg-grey-light px-2.5 py-2 text-[10px] text-grey space-y-0.5">
+                                        {item.colores_hilo && <p><span className="font-medium text-dark">Hilos:</span> {item.colores_hilo}</p>}
+                                        {item.color_jebe && <p><span className="font-medium text-dark">Jebe alto relieve:</span> {item.color_jebe}</p>}
+                                      </div>
+                                    )}
+                                    {item.notas && <p className="mt-3 text-[10px] text-grey italic border-t border-grey-border pt-2">{item.notas}</p>}
+                                  </div>
+                                </article>
+                              );
+                            })}
+                          </div>
+                        </section>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      )}
+
       {adminTab === 'pedidos' && (
         <div className="max-w-5xl mx-auto px-6 py-10">
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6 text-[11px] text-amber-700">
@@ -1257,12 +1522,40 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                             className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
                           <input type="text" placeholder="Técnica (bordado, estampado...)" value={it.tecnica} onChange={e => setItem(idx, 'tecnica', e.target.value)}
                             className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                          <input type="text" placeholder="Bastidor (ej. 12 × 12 cm)" value={it.bastidor || ''} onChange={e => setItem(idx, 'bastidor', e.target.value)}
+                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                          <input type="number" min="0" placeholder="Colores cargados en máquina" value={it.colores_maquina || ''} onChange={e => setItem(idx, 'colores_maquina', parseInt(e.target.value) || 0)}
+                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                          <input type="number" min="0" placeholder="Total de colores del diseño" value={it.numero_colores || ''} onChange={e => setItem(idx, 'numero_colores', parseInt(e.target.value) || 0)}
+                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
                           <input type="number" placeholder="Cantidad" value={it.cantidad} onChange={e => setItem(idx, 'cantidad', parseInt(e.target.value) || 0)}
                             className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
                           <input type="text" placeholder="Lote (ej. Orden 001)" value={it.lote} onChange={e => setItem(idx, 'lote', e.target.value)}
                             className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                          <input type="text" placeholder="Colores de hilo (ej. rojo, blanco, dorado)" value={it.colores_hilo || ''} onChange={e => setItem(idx, 'colores_hilo', e.target.value)}
+                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors col-span-2" />
+                          <input type="text" placeholder="Color de jebe (solo alto relieve)" value={it.color_jebe || ''} onChange={e => setItem(idx, 'color_jebe', e.target.value)}
+                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors col-span-2" />
                           <input type="text" placeholder="Notas del diseño" value={it.notas} onChange={e => setItem(idx, 'notas', e.target.value)}
                             className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors col-span-2" />
+                          <div className="col-span-2 pt-1">
+                            <p className="text-[9px] text-grey font-medium uppercase tracking-widest mb-2">Posiciones de bordado requeridas</p>
+                            <div className="flex flex-wrap gap-2">
+                              {POSICIONES_BORDADO.map(posicion => {
+                                const requerido = obtenerBordados(it)[posicion.key]?.requerido;
+                                return (
+                                  <button
+                                    key={posicion.key}
+                                    type="button"
+                                    onClick={() => setBordadoRequerido(idx, posicion.key, !requerido)}
+                                    className={`px-3 py-1.5 rounded-full border text-[10px] font-medium transition-colors ${requerido ? 'bg-primary/10 border-primary text-primary' : 'bg-grey-light border-grey-border text-grey hover:border-primary/50'}`}
+                                  >
+                                    {requerido ? '✓ ' : ''}{posicion.short}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1523,6 +1816,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                                   <th className="py-1.5 pr-2 font-medium">Color</th>
                                   <th className="py-1.5 pr-2 font-medium">Tela</th>
                                   <th className="py-1.5 pr-2 font-medium">Técnica</th>
+                                  <th className="py-1.5 pr-2 font-medium">Bastidor</th>
                                   <th className="py-1.5 pr-2 font-medium text-right">Cant.</th>
                                   <th className="py-1.5 font-medium">Notas</th>
                                 </tr>
@@ -1539,6 +1833,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                                     <td className="py-1.5 pr-2 text-dark">{it.color || '—'}</td>
                                     <td className="py-1.5 pr-2 text-dark">{it.tela || '—'}</td>
                                     <td className="py-1.5 pr-2 text-dark">{it.tecnica || '—'}</td>
+                                    <td className="py-1.5 pr-2 text-dark font-medium">{it.bastidor || '—'}</td>
                                     <td className="py-1.5 pr-2 text-dark text-right font-medium">{it.cantidad}</td>
                                     <td className="py-1.5 text-grey italic">{it.notas}</td>
                                   </tr>

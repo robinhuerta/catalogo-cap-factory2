@@ -36,18 +36,37 @@ export interface DBProduct {
   created_at: string;
 }
 
+export type BordadoPosicion = 'frontal' | 'lateral_izquierdo' | 'lateral_derecho' | 'posterior';
+
+export interface EstadoBordado {
+  requerido: boolean;
+  listo: boolean;
+}
+
+export type BordadosPorPosicion = Partial<Record<BordadoPosicion, EstadoBordado>>;
+
 export interface PedidoItem {
   diseno: string;
   color: string;
   tela: string;
   cantidad: number;
   tecnica: string;
+  bastidor: string;
+  colores_maquina: number;
+  numero_colores: number;
+  colores_hilo: string;
+  color_jebe: string;
   imagen: string;
   notas: string;
   lote: string;
   corte: boolean;
   confeccion: boolean;
   bordado: boolean;
+  /**
+   * Control de producción por ubicación. `bordado` se mantiene para que los
+   * pedidos antiguos sigan funcionando mientras se pasan a este nuevo flujo.
+   */
+  bordados?: BordadosPorPosicion;
 }
 
 export interface DBPedido {

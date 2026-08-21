@@ -151,7 +151,10 @@ const App: React.FC = () => {
         onOpenQuote={() => setIsDrawerOpen(true)}
         quoteCount={quoteList.length}
         activeView={viewMode}
-        onSetView={setViewMode}
+        onSetView={(view) => {
+          setViewMode(view);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
         searchQuery={searchQuery}
         setSearchQuery={handleSearch}
       />
