@@ -1561,16 +1561,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                       {pedidoForm.items.length > 1 && (
                         <button onClick={() => removeItem(idx)} className="absolute top-3 right-3 w-6 h-6 rounded-full bg-grey-light hover:bg-red-500 hover:text-white flex items-center justify-center text-grey text-xs transition-colors">×</button>
                       )}
-                      <div className="flex gap-4">
-                        <div className="flex-shrink-0">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-shrink-0 flex justify-center sm:justify-start">
                           {it.imagen ? (
                             <div className="relative group/thumb">
                               <img src={it.imagen} alt="" onClick={() => setZoomImg(it.imagen)}
-                                className="w-32 h-32 object-cover rounded-lg border border-grey-border cursor-zoom-in hover:opacity-90 transition-opacity" />
+                                className="w-32 h-32 sm:w-28 sm:h-28 object-cover rounded-lg border border-grey-border cursor-zoom-in hover:opacity-90 transition-opacity" />
                               <button onClick={() => setItem(idx, 'imagen', '')} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity">×</button>
                             </div>
                           ) : (
-                            <div onClick={() => itemFileRefs.current[idx]?.click()} className="w-32 h-32 border-2 border-dashed border-grey-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors text-grey hover:text-primary">
+                            <div onClick={() => itemFileRefs.current[idx]?.click()} className="w-32 h-32 sm:w-28 sm:h-28 border-2 border-dashed border-grey-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors text-grey hover:text-primary">
                               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
                               <span className="text-[9px] mt-1">{itemUploadingIdx === idx ? '...' : 'Foto ref.'}</span>
                             </div>
@@ -1578,7 +1578,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                           <input ref={el => { itemFileRefs.current[idx] = el; }} type="file" accept="image/*" className="hidden"
                             onChange={e => e.target.files?.[0] && uploadItemImage(idx, e.target.files[0])} />
                         </div>
-                        <div className="flex-1 grid grid-cols-2 gap-2">
+                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <input type="text" placeholder="Diseño / modelo" value={it.diseno} onChange={e => setItem(idx, 'diseno', e.target.value)}
                             className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
                           <input type="text" placeholder="Color" value={it.color} onChange={e => setItem(idx, 'color', e.target.value)}
@@ -1897,7 +1897,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                               <h3 className="font-display font-bold text-dark text-sm">{loteName} <span className="text-grey font-normal text-[10px]">· {p.cliente}</span></h3>
                               <span className="text-[10px] text-grey">{entries.length} diseños · {loteTotal.toLocaleString('es-PE')} uds</span>
                             </div>
-                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mt-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
                               {entries.map(({ item: it }, i) => (
                                 <div key={i} className="border border-grey-border rounded-xl overflow-hidden break-inside-avoid">
                                   <div className="w-full aspect-[4/3] bg-grey-light">
