@@ -1813,7 +1813,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
               @media print {
                 @page { size: A4; margin: 12mm; }
                 body * { visibility: hidden; }
-                .print-modal-wrapper { position: static !important; display: block !important; height: auto !important; overflow: visible !important; padding: 0 !important; }
+                .print-modal-wrapper { position: absolute !important; left: 0 !important; top: 0 !important; display: block !important; height: auto !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; }
                 .print-sheet, .print-sheet * { visibility: visible; }
                 .print-sheet {
                   position: static !important; width: 100% !important; max-width: none !important;
