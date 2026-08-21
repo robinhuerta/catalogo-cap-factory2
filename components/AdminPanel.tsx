@@ -191,9 +191,33 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
 
   const openEditPedido = (p: DBPedido) => {
     const { id, created_at, ...rest } = p;
-    setPedidoForm({ ...rest, items: rest.items.length ? rest.items : [{ ...EMPTY_ITEM }] });
+    const sortedItems = [...rest.items].sort((a, b) => {
+      const loteA = a.lote || SIN_LOTE;
+      const loteB = b.lote || SIN_LOTE;
+      if (loteA === SIN_LOTE && loteB !== SIN_LOTE) return 1;
+      if (loteA !== SIN_LOTE && loteB === SIN_LOTE) return -1;
+      const cmp = loteA.localeCompare(loteB, undefined, { numeric: true, sensitivity: 'base' });
+      if (cmp !== 0) return cmp;
+      return (a.diseno || '').localeCompare(b.diseno || '', undefined, { numeric: true, sensitivity: 'base' });
+    });
+    setPedidoForm({ ...rest, items: sortedItems.length ? sortedItems : [{ ...EMPTY_ITEM }] });
     setPedidoEditId(id);
     setPedidoModal(true);
+  };
+
+  const sortFormItems = () => {
+    setPedidoForm(f => ({
+      ...f,
+      items: [...f.items].sort((a, b) => {
+        const loteA = a.lote || SIN_LOTE;
+        const loteB = b.lote || SIN_LOTE;
+        if (loteA === SIN_LOTE && loteB !== SIN_LOTE) return 1;
+        if (loteA !== SIN_LOTE && loteB === SIN_LOTE) return -1;
+        const cmp = loteA.localeCompare(loteB, undefined, { numeric: true, sensitivity: 'base' });
+        if (cmp !== 0) return cmp;
+        return (a.diseno || '').localeCompare(b.diseno || '', undefined, { numeric: true, sensitivity: 'base' });
+      })
+    }));
   };
 
   const pdField = (key: keyof typeof pedidoForm, value: unknown) =>
@@ -1510,7 +1534,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
               {/* Items / diseños */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-[10px] text-grey font-medium uppercase tracking-widest">Diseños del pedido</p>
+                  <div className="flex items-center gap-4">
+                    <p className="text-[10px] text-grey font-medium uppercase tracking-widest">Diseños del pedido</p>
+                    <button onClick={sortFormItems} className="text-[9px] text-dark bg-grey-light hover:bg-grey-border px-2.5 py-1 rounded-full font-medium transition-colors border border-grey-border shadow-sm flex items-center gap-1.5">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
+                      Ordenar por Lote
+                    </button>
+                  </div>
                   <div className="flex items-center gap-3">
                     <button onClick={() => pedidoBulkRef.current?.click()} disabled={!!pedidoBulkProgress}
                       className="text-[10px] text-primary font-medium uppercase tracking-widest hover:text-primary-dark transition-colors disabled:opacity-50">
