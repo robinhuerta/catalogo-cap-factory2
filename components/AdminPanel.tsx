@@ -161,7 +161,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   const [pedidoViewId, setPedidoViewId] = useState<string | null>(null);
   const [viewFilterLote, setViewFilterLote] = useState<string>('');
   const [pedidoPrintId, setPedidoPrintId] = useState<string | null>(null);
-  const [printFilterLote, setPrintFilterLote] = useState<string>('');
+  const [printFilterLote, setPrintFilterLote] = useState<string | null>(null);
   const [bordadoFilter, setBordadoFilter] = useState<'pending' | 'done' | 'all'>('pending');
   const [bordadoLote, setBordadoLote] = useState('');
   const [bordadoSaving, setBordadoSaving] = useState<string | null>(null);
@@ -941,7 +941,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                       <button onClick={() => { setViewFilterLote(''); setPedidoViewId(p.id); }} className="px-3 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-[10px] font-medium uppercase tracking-widest transition-colors">
                         Ver diseños
                       </button>
-                      <button onClick={() => { setPrintFilterLote(''); setPedidoPrintId(p.id); }} className="px-3 py-2 rounded-lg bg-dark/5 text-dark hover:bg-dark/10 text-[10px] font-medium uppercase tracking-widest transition-colors">
+                      <button onClick={() => { 
+                        const lotes = Array.from(new Set(p.items.map(it => it.lote || SIN_LOTE)));
+                        setPrintFilterLote(lotes.length > 1 ? null : (lotes[0] || ''));
+                        setPedidoPrintId(p.id); 
+                      }} className="px-3 py-2 rounded-lg bg-dark/5 text-dark hover:bg-dark/10 text-[10px] font-medium uppercase tracking-widest transition-colors">
                         🖨️ Ficha
                       </button>
                       <button onClick={() => archivePedido(p)} title={p.activo ? 'Archivar' : 'Reactivar'}
@@ -1833,33 +1837,38 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                     </button>
                   </div>
                 </div>
-                {(() => {
-                  const allLotes = groupByLote(p.items);
-                  return allLotes.length > 1 && (
-                    <div className="flex flex-wrap items-center gap-2 mt-4">
-                      <span className="text-[10px] text-grey uppercase tracking-widest mr-1">Imprimir:</span>
-                      <button
-                        onClick={() => setPrintFilterLote('')}
-                        className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${printFilterLote === '' ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
-                      >
-                        Todos los lotes
-                      </button>
-                      {allLotes.map(([loteName]) => (
-                        <button
-                          key={loteName}
-                          onClick={() => setPrintFilterLote(loteName === printFilterLote ? '' : loteName)}
-                          className={`px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border transition-all ${printFilterLote === loteName ? 'bg-dark border-dark text-cream' : 'bg-white border-grey-border text-grey hover:border-dark hover:text-dark'}`}
-                        >
-                          {loteName}
-                        </button>
-                      ))}
-                    </div>
-                  );
-                })()}
+                {printFilterLote !== null && groupByLote(p.items).length > 1 && (
+                  <div className="flex flex-wrap items-center gap-2 mt-4 no-print">
+                    <span className="text-[10px] text-grey uppercase tracking-widest mr-1">Lote seleccionado:</span>
+                    <button
+                      onClick={() => setPrintFilterLote(null)}
+                      className="px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase border bg-grey-light border-grey-border text-dark hover:border-dark transition-all"
+                    >
+                      ← Cambiar lote
+                    </button>
+                    <span className="px-3 py-1.5 rounded-full text-[10px] font-medium tracking-widest uppercase bg-dark text-cream">{printFilterLote}</span>
+                  </div>
+                )}
               </div>
 
               <div className="p-8 print:p-0">
-                {(() => {
+                {printFilterLote === null ? (
+                  <div className="py-12 text-center no-print">
+                    <h2 className="text-xl font-display font-bold text-dark mb-2">Selecciona el lote a imprimir</h2>
+                    <p className="text-grey text-sm mb-8">Se imprimirá un lote por hoja A4 para mayor orden en producción.</p>
+                    <div className="flex flex-wrap justify-center gap-3">
+                      {groupByLote(p.items).map(([loteName]) => (
+                        <button
+                          key={loteName}
+                          onClick={() => setPrintFilterLote(loteName)}
+                          className="px-6 py-3 rounded-xl bg-grey-light hover:bg-dark hover:text-cream text-dark font-medium transition-colors"
+                        >
+                          Imprimir {loteName}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (() => {
                   const printLotes = groupByLote(p.items).filter(([loteName]) => !printFilterLote || loteName === printFilterLote);
                   const printTotalUnidades = printLotes.reduce((s, [, entries]) => s + entries.reduce((s2, { item }) => s2 + (Number(item.cantidad) || 0), 0), 0);
                   const printTotalItems = printLotes.reduce((s, [, entries]) => s + entries.length, 0);
