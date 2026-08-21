@@ -592,16 +592,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
   return (
     <div className="min-h-screen bg-cream">
       {/* Top bar */}
-      <div className="bg-dark border-b border-white/10 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
+      <div className="bg-dark border-b border-white/10 px-4 sm:px-6 py-4 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 w-full xl:w-auto">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="font-display font-bold text-cream text-xs">CF</span>
             </div>
             <span className="font-display font-bold text-cream text-sm">Admin</span>
           </div>
           {/* Tabs */}
-          <div className="flex items-center gap-1 bg-white/10 rounded-full p-1 overflow-x-auto max-w-full">
+          <div className="flex items-center gap-1 bg-white/10 rounded-full p-1 overflow-x-auto w-full md:w-auto custom-scrollbar">
             <button
               onClick={() => setAdminTab('bordado')}
               className={`px-4 py-1.5 rounded-full text-[11px] font-medium tracking-widest uppercase transition-colors ${adminTab === 'bordado' ? 'bg-primary text-cream' : 'text-cream/60 hover:text-cream'}`}
@@ -628,7 +628,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto w-full xl:w-auto custom-scrollbar pb-1 xl:pb-0">
           {adminTab === 'products' ? (
             <>
               <button
