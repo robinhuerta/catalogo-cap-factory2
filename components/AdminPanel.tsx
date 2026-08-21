@@ -940,7 +940,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                   </div>
                   {p.items.length > 0 && (
                     <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-grey-border">
-                      {p.items.map((it, i) => (
+                      {[...p.items].sort((a, b) => {
+                        const loteA = a.lote || SIN_LOTE;
+                        const loteB = b.lote || SIN_LOTE;
+                        if (loteA === SIN_LOTE && loteB !== SIN_LOTE) return 1;
+                        if (loteA !== SIN_LOTE && loteB === SIN_LOTE) return -1;
+                        const cmp = loteA.localeCompare(loteB, undefined, { numeric: true, sensitivity: 'base' });
+                        if (cmp !== 0) return cmp;
+                        return (a.diseno || '').localeCompare(b.diseno || '', undefined, { numeric: true, sensitivity: 'base' });
+                      }).map((it, i) => (
                         <div key={i} className="flex items-center gap-3 bg-grey-light rounded-lg pl-1.5 pr-4 py-1.5">
                           <div className="w-14 h-14 rounded-lg overflow-hidden bg-white flex-shrink-0 cursor-zoom-in" onClick={() => it.imagen && setZoomImg(it.imagen)}>
                             {it.imagen
