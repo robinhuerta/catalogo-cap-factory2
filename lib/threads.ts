@@ -117,5 +117,5 @@ export const TREBOL_THREADS: ThreadColor[] = [
   { code: '5219', name: 'Pale pink', brand: 'TREBOL', hex: '#ffe4e1' },
   { code: '5209', name: 'BB', brand: 'TREBOL', hex: '#fff0f5' },
   { code: '5217', name: 'Purple Rose', brand: 'TREBOL', hex: '#da70d6' },
-  { code: '5210', name: 'BLANCO', brand: 'TREBOL', hex: '#ffffff' }
+  { code: '5310', name: 'BLANCO', brand: 'TREBOL', hex: '#ffffff' }
 ];
