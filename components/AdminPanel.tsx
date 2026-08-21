@@ -46,11 +46,13 @@ const ETAPAS = [
 ];
 
 const POSICIONES_BORDADO: { key: BordadoPosicion; label: string; short: string }[] = [
-  { key: 'frontal', label: 'Bordado frontal', short: 'Frontal' },
-  { key: 'lateral_izquierdo', label: 'Lateral izquierdo', short: 'Lateral izq.' },
-  { key: 'lateral_derecho', label: 'Lateral derecho', short: 'Lateral der.' },
-  { key: 'posterior', label: 'Bordado posterior', short: 'Posterior' },
+  { key: 'frontal', label: 'Frontal', short: 'FR' },
+  { key: 'lateral_izquierdo', label: 'Lat. Izq', short: 'LI' },
+  { key: 'lateral_derecho', label: 'Lat. Der', short: 'LD' },
+  { key: 'posterior', label: 'Posterior', short: 'PO' },
 ];
+
+const BASTIDORES = ['12', '15', '18', '21', 'Cuadrado 24'];
 
 function bordadosIniciales(): BordadosPorPosicion {
   return {
@@ -320,6 +322,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
         const bordados = obtenerBordados(item);
         const actualizados = { ...bordados, [posicion]: { requerido, listo: requerido ? bordados[posicion]?.listo ?? false : false } };
         return { ...item, bordados: actualizados, bordado: bordadoTerminado(actualizados) };
+      }),
+    }));
+  };
+
+  const setBordadoField = (idx: number, posicion: BordadoPosicion, key: string, value: any) => {
+    setPedidoForm(form => ({
+      ...form,
+      items: form.items.map((item, i) => {
+        if (i !== idx) return item;
+        const bordados = obtenerBordados(item);
+        const actualizados = { ...bordados, [posicion]: { ...bordados[posicion], [key]: value } };
+        return { ...item, bordados: actualizados };
       }),
     }));
   };
@@ -1522,25 +1536,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                             className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
                           <input type="text" placeholder="Técnica (bordado, estampado...)" value={it.tecnica} onChange={e => setItem(idx, 'tecnica', e.target.value)}
                             className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
-                          <input type="text" placeholder="Bastidor (ej. 12 × 12 cm)" value={it.bastidor || ''} onChange={e => setItem(idx, 'bastidor', e.target.value)}
-                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
-                          <input type="number" min="0" placeholder="Colores cargados en máquina" value={it.colores_maquina || ''} onChange={e => setItem(idx, 'colores_maquina', parseInt(e.target.value) || 0)}
-                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
-                          <input type="number" min="0" placeholder="Total de colores del diseño" value={it.numero_colores || ''} onChange={e => setItem(idx, 'numero_colores', parseInt(e.target.value) || 0)}
-                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
                           <input type="number" placeholder="Cantidad" value={it.cantidad} onChange={e => setItem(idx, 'cantidad', parseInt(e.target.value) || 0)}
                             className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
                           <input type="text" placeholder="Lote (ej. Orden 001)" value={it.lote} onChange={e => setItem(idx, 'lote', e.target.value)}
                             className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
-                          <input type="text" placeholder="Colores de hilo (ej. rojo, blanco, dorado)" value={it.colores_hilo || ''} onChange={e => setItem(idx, 'colores_hilo', e.target.value)}
-                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors col-span-2" />
-                          <input type="text" placeholder="Color de jebe (solo alto relieve)" value={it.color_jebe || ''} onChange={e => setItem(idx, 'color_jebe', e.target.value)}
-                            className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors col-span-2" />
                           <input type="text" placeholder="Notas del diseño" value={it.notas} onChange={e => setItem(idx, 'notas', e.target.value)}
                             className="border border-grey-border rounded-lg px-2.5 py-2 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors col-span-2" />
+                          
                           <div className="col-span-2 pt-1">
                             <p className="text-[9px] text-grey font-medium uppercase tracking-widest mb-2">Posiciones de bordado requeridas</p>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2 mb-3">
                               {POSICIONES_BORDADO.map(posicion => {
                                 const requerido = obtenerBordados(it)[posicion.key]?.requerido;
                                 return (
@@ -1552,6 +1557,32 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                                   >
                                     {requerido ? '✓ ' : ''}{posicion.short}
                                   </button>
+                                );
+                              })}
+                            </div>
+                            
+                            <div className="space-y-3">
+                              {POSICIONES_BORDADO.filter(p => obtenerBordados(it)[p.key]?.requerido).map(posicion => {
+                                const posData = obtenerBordados(it)[posicion.key] || {} as any;
+                                return (
+                                  <div key={posicion.key} className="bg-grey-light rounded-lg p-3 border border-grey-border">
+                                    <p className="text-[10px] font-bold text-dark mb-2 uppercase">{posicion.label}</p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <input type="text" placeholder="Nombre DST" value={posData.nombre_dst || ''} onChange={e => setBordadoField(idx, posicion.key, 'nombre_dst', e.target.value)}
+                                        className="border border-grey-border rounded-lg px-2.5 py-1.5 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                                      <select value={posData.bastidor || ''} onChange={e => setBordadoField(idx, posicion.key, 'bastidor', e.target.value)}
+                                        className="border border-grey-border rounded-lg px-2.5 py-1.5 text-xs text-dark focus:outline-none focus:border-primary transition-colors bg-white">
+                                        <option value="" className="text-grey">Seleccionar Bastidor</option>
+                                        {BASTIDORES.map(b => <option key={b} value={b}>{b}</option>)}
+                                      </select>
+                                      <input type="number" min="0" placeholder="Cant. Colores" value={posData.numero_colores || ''} onChange={e => setBordadoField(idx, posicion.key, 'numero_colores', parseInt(e.target.value) || 0)}
+                                        className="border border-grey-border rounded-lg px-2.5 py-1.5 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                                      <input type="text" placeholder="Colores de Hilo (ej. rojo)" value={posData.colores_hilo || ''} onChange={e => setBordadoField(idx, posicion.key, 'colores_hilo', e.target.value)}
+                                        className="border border-grey-border rounded-lg px-2.5 py-1.5 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors" />
+                                      <input type="text" placeholder="Color de Jebe (3D)" value={posData.color_jebe || ''} onChange={e => setBordadoField(idx, posicion.key, 'color_jebe', e.target.value)}
+                                        className="border border-grey-border rounded-lg px-2.5 py-1.5 text-xs text-dark placeholder:text-grey focus:outline-none focus:border-primary transition-colors col-span-2" />
+                                    </div>
+                                  </div>
                                 );
                               })}
                             </div>

@@ -41,6 +41,11 @@ export type BordadoPosicion = 'frontal' | 'lateral_izquierdo' | 'lateral_derecho
 export interface EstadoBordado {
   requerido: boolean;
   listo: boolean;
+  nombre_dst?: string;
+  bastidor?: string;
+  numero_colores?: number;
+  colores_hilo?: string;
+  color_jebe?: string;
 }
 
 export type BordadosPorPosicion = Partial<Record<BordadoPosicion, EstadoBordado>>;
