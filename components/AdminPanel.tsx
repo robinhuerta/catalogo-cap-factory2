@@ -370,7 +370,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push({ item, idx });
     });
-    return Array.from(map.entries());
+    return Array.from(map.entries()).sort((a, b) => {
+      if (a[0] === SIN_LOTE) return 1;
+      if (b[0] === SIN_LOTE) return -1;
+      return a[0].localeCompare(b[0], undefined, { numeric: true, sensitivity: 'base' });
+    });
   };
 
   const loadProjects = async () => {
