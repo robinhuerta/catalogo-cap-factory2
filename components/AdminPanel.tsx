@@ -1888,38 +1888,27 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onExit }) => {
                               <h3 className="font-display font-bold text-dark text-sm">{loteName} <span className="text-grey font-normal text-[10px]">· {p.cliente}</span></h3>
                               <span className="text-[10px] text-grey">{entries.length} diseños · {loteTotal.toLocaleString('es-PE')} uds</span>
                             </div>
-                            <table className="w-full text-[10px] border-collapse">
-                              <thead>
-                                <tr className="text-left text-grey border-b border-grey-border">
-                                  <th className="py-1.5 pr-2 font-medium w-12">Foto</th>
-                                  <th className="py-1.5 pr-2 font-medium">Diseño</th>
-                                  <th className="py-1.5 pr-2 font-medium">Color</th>
-                                  <th className="py-1.5 pr-2 font-medium">Tela</th>
-                                  <th className="py-1.5 pr-2 font-medium">Técnica</th>
-                                  <th className="py-1.5 pr-2 font-medium">Bastidor</th>
-                                  <th className="py-1.5 pr-2 font-medium text-right">Cant.</th>
-                                  <th className="py-1.5 font-medium">Notas</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {entries.map(({ item: it }, i) => (
-                                  <tr key={i} className="border-b border-grey-border/60">
-                                    <td className="py-1.5 pr-2">
-                                      {it.imagen
-                                        ? <img src={it.imagen} alt="" className="w-9 h-9 object-cover rounded" />
-                                        : <div className="w-9 h-9 bg-grey-light rounded" />}
-                                    </td>
-                                    <td className="py-1.5 pr-2 text-dark">{it.diseno || '—'}</td>
-                                    <td className="py-1.5 pr-2 text-dark">{it.color || '—'}</td>
-                                    <td className="py-1.5 pr-2 text-dark">{it.tela || '—'}</td>
-                                    <td className="py-1.5 pr-2 text-dark">{it.tecnica || '—'}</td>
-                                    <td className="py-1.5 pr-2 text-dark font-medium">{it.bastidor || '—'}</td>
-                                    <td className="py-1.5 pr-2 text-dark text-right font-medium">{it.cantidad}</td>
-                                    <td className="py-1.5 text-grey italic">{it.notas}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mt-4">
+                              {entries.map(({ item: it }, i) => (
+                                <div key={i} className="border border-grey-border rounded-xl overflow-hidden break-inside-avoid">
+                                  <div className="w-full aspect-[4/3] bg-grey-light">
+                                    {it.imagen
+                                      ? <img src={it.imagen} alt="" className="w-full h-full object-cover" />
+                                      : <div className="w-full h-full flex items-center justify-center text-grey text-xs">Sin foto</div>}
+                                  </div>
+                                  <div className="p-3">
+                                    <p className="font-bold text-dark text-[11px] truncate">{it.diseno || 'Sin nombre'}</p>
+                                    <p className="text-dark text-[10px] font-medium mt-0.5">
+                                      {it.cantidad} uds{it.color && ` · ${it.color}`}
+                                    </p>
+                                    <p className="text-grey text-[9px] mt-0.5 leading-tight">
+                                      {[it.tela, it.tecnica, it.bastidor].filter(Boolean).join(' · ')}
+                                    </p>
+                                    {it.notas && <p className="text-grey/80 text-[9px] italic line-clamp-2 mt-1.5 border-t border-grey-border/50 pt-1.5">{it.notas}</p>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         );
                       })}
